@@ -153,3 +153,54 @@ It always shows the `SmartStatus` component. If applicable, it displays the `Dro
 
 ## TableControlBar Subcomponents
 These components are used by the `TableControlBar` but can also be used individually as children of `DataTable`.
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`TableControlBar` is a layout container (`div`s, no landmark or heading) that arranges filters, a status line, actions, and the optional card/list view toggle. Table-wide context is on the [main DataTable Accessibility section](/components/datatable/#accessibility); filter controls are detailed on the [TableFilters page](/components/datatable/tablefilters#accessibility). No single APG pattern applies to the bar itself.
+
+### Keyboard support
+
+All controls in the bar are native buttons and form fields reachable with <kbd>Tab</kbd> and operable with <kbd>Enter</kbd> / <kbd>Space</kbd>. The filters dropdown and the actions overflow menu follow Paragon [Dropdown](/components/dropdown/#accessibility) and `ModalPopup` behavior respectively.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Bar container | *(no role)* | Layout `div` (`.pgn__data-table-status-bar`). |
+| Status line (`SmartStatus`) | *(no role)* | Plain text that swaps between selection, filter, and row status; not a live region — changes are not announced. |
+| "Clear filters" / "Select all" / "Clear selection" | `<button>` | Localized visible text (overridable via props). |
+| Action buttons (`TableActions` / `BulkActions`) | `<button>` | First two actions render as text buttons. |
+| Actions overflow toggle | `<button aria-label="More actions">` ("Actions" on small screens) | Icon-only button; label is hard-coded English. Opens a `ModalPopup` containing the remaining action buttons. |
+| View toggle group (`DataViewToggle`) | `role="group"` | The group has no accessible name. |
+| View toggle buttons | `<button aria-label="Card">` / `"List"`, `aria-selected` | `IconButtonToggle` sets `aria-selected` on the active/inactive buttons — a state not permitted on the `button` role. Labels and "Card view" / "List view" tooltips are hard-coded English. |
+
+### Screen reader expectations
+
+- Action and status buttons announce with their visible text. The overflow toggle announces as "More actions, button". *(Verification pending per the policy's AT matrix.)*
+- Changes in the status line (rows shown, selection count, active filters) are **not** announced automatically.
+- The view toggle buttons announce as "Card, button" / "List, button"; because `aria-selected` is invalid on buttons, exposure of the active state is unreliable, and switching views is not announced. *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Provide localized, action-specific `buttonText` (or component labels) for `tableActions` and `bulkActions`; icon-only custom actions need explicit accessible names.
+- If your users depend on knowing the selection/filter count as it changes, surface that state through an announced mechanism of your own — the built-in status line is visual only.
+- Localize the status strings you can control (`clearFiltersText`, `selectAllText`, `clearSelectionText`, `statusText`).
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — action buttons, overflow toggle, view toggle
+- [ARIA state or property is permitted](https://www.w3.org/WAI/standards-guidelines/act/rules/5c01ea/) — `aria-selected` on the view toggle buttons
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- `DataViewToggle` sets `aria-selected` on `button` elements (not a permitted state for the `button` role; `aria-pressed` would express the toggle state), and its `role="group"` wrapper has no accessible name.
+- Status changes in `SmartStatus` (selection count, filter summary, rows shown) are not exposed to assistive technology as they happen — no live region.
+- Hard-coded English strings: "More actions" / "Actions" overflow labels, and the view toggle's "Card" / "List" labels and tooltips are not localized.

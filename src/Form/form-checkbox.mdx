@@ -241,3 +241,71 @@ by passing the `floatLabelLeft` prop.
   </Form.CheckboxSet>
 </Form.Group>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Checkbox` renders a native `<input type="checkbox">`, so checkbox semantics and keyboard
+behavior come from the browser rather than ARIA. This satisfies the intent of the
+[APG checkbox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/) without custom roles.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus to the next / previous checkbox. Every checkbox in a `Form.CheckboxSet` is its own tab stop (native behavior). |
+| <kbd>Space</kbd> | Toggles the focused checkbox (native activation). |
+
+Paragon adds no JavaScript key handling; all keyboard behavior is native.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Control | `<input type="checkbox">` | Native role and checked state; no ARIA overrides. |
+| Control | `id` | Uses the `id` prop, or an auto-generated `form-field-*` id. |
+| Label (`<label>`) | `for` = control id | The `children` of `Form.Checkbox` are the checkbox's accessible name. |
+| Control | `aria-describedby` | Points at the `description` prop's element when one is provided. |
+| `Form.CheckboxSet` container (`<div>`) | `role="group"` | |
+| `Form.CheckboxSet` container | `aria-labelledby` | References the surrounding `Form.Group`'s `Form.Label` (rendered as a `<p>` with a generated id). |
+| Standalone `Form.Checkbox` directly inside a `Form.Group` | `role="group"` + `aria-labelledby` on its wrapper | The checkbox acts as a one-item labeled group. |
+| Indeterminate state (`isIndeterminate`) | DOM `indeterminate` property | Exposed natively as a "mixed" checked state. |
+
+### Screen reader expectations
+
+- A focused checkbox announces its label, "checkbox", and checked/unchecked state — e.g. "Green,
+  checkbox, not checked". *(Verification pending per the policy's AT matrix.)*
+- Inside a `Form.CheckboxSet` within a labeled `Form.Group`, the group label (e.g. "Which Color?")
+  is announced when focus enters the group. *(Verification pending per the policy's AT matrix.)*
+- An `isIndeterminate` checkbox announces a mixed/partially-checked state. *(Verification pending
+  per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Always provide label `children`; when using the bare `CheckboxControl`, supply `aria-label`
+  (as the example above does) — a bare control has no name of its own.
+- Wrap a `Form.CheckboxSet` in a `Form.Group` with a `Form.Label` so the `role="group"` container
+  has an accessible name.
+- Because `isValid` / `isInvalid` are conveyed by color and icon styling only (see Known issues),
+  pair them with visible text: the `description` prop (associated automatically via
+  `aria-describedby`) or a `Form.Control.Feedback` inside the group.
+- Localize label, description, and feedback text; the component renders your strings verbatim.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — each checkbox, and bare `CheckboxControl` usage
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-labelledby` / `aria-describedby` id references
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — label, description, and validation text
+
+### Known issues
+
+Identified in the August 2026 accessibility audit (code-verified, not yet filed):
+
+- `isInvalid` / `isValid` only toggle CSS classes (`pgn__form-control-invalid` /
+  `pgn__form-control-valid`); `aria-invalid` is never set on the input, so the error state itself
+  is not exposed to assistive technology — only an associated `description` text is.

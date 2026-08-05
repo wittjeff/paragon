@@ -56,3 +56,35 @@ The fullscreen `ModalDialog` composition. `FullscreenModal` passes all of its pr
   )
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`FullscreenModal` is a preconfigured composition of [`ModalDialog`](/components/modal-dialog) with
+`size="fullscreen"` and `variant="dark"` defaults. Covering the viewport does not change the
+semantics: it is still a `role="dialog"` element named by `title`, with the focus trap, focus
+return, scroll lock, and <kbd>Escape</kbd> / backdrop dismissal documented, together with the
+applicable ACT rules, in [ModalDialog's Accessibility section](/components/modal-dialog#accessibility)
+([APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)).
+
+### What FullscreenModal adds or changes
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Title | `<h2>` via `ModalDialog.Title` | Rendered automatically from the required `title` prop (also the dialog's `aria-label`). |
+| Close icon button | Rendered by default | `hasCloseButton` defaults to `true`. The default `closeLabel` is the hard-coded English string "Close" (`FULLSCREEN_MODAL_CLOSE_LABEL`), which bypasses `ModalDialog`'s localized default. |
+| Dialog container | `pgn__modal-dark` styling | The default dark variant changes colors only; verify your themed content still meets contrast requirements ([Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/)). |
+
+### Application responsibilities
+
+- Supply a meaningful, localized `title`, and pass a localized `closeLabel` (the built-in default
+  "Close" is hard-coded English).
+- A fullscreen dialog can hold long content — preserve a sensible heading structure inside the body
+  (the title is an `<h2>`), and keep the footer's closing action reachable by keyboard.
+
+### Known issues
+
+- Inherited from `ModalDialog`: `aria-modal="true"` is not set on the dialog element —
+  [#4402](https://github.com/openedx/paragon/issues/4402), identified in the August 2026
+  accessibility audit.

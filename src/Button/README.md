@@ -229,3 +229,55 @@ To implement loading state using a `Button` component, the [StatefulButton](http
 is available for use. <br/>
 This specialized component is designed to seamlessly manage and display boot states, providing a more efficient and 
 user-friendly experience.
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+Paragon's `Button` wraps [React-Bootstrap's Button](https://react-bootstrap-v4.netlify.app/components/buttons/) and follows the [APG button pattern](https://www.w3.org/WAI/ARIA/apg/patterns/button/) by rendering a native `<button>`. When `href` is set it instead renders an `<a>` element styled as a button — link semantics, not button semantics.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activates the button (native `<button>` behavior). |
+| <kbd>Enter</kbd> | On the anchor rendering (`href` set): follows the link. |
+| <kbd>Space</kbd> | On the anchor rendering: intercepted by React-Bootstrap's `SafeAnchor` — page scroll is prevented and your `onClick` handler fires; native link navigation does not occur. |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Default rendering | `<button type="button">` | Provided by React-Bootstrap; `type` defaults to `button`, so it never submits a form unless you pass `type="submit"`. |
+| With `href` | `<a href="...">` | Provided by React-Bootstrap (`SafeAnchor`); native link role. |
+| With a trivial `href` (empty or `"#"`) | `role="button"`, `href="#"` | `SafeAnchor` assigns `role="button"` and suppresses navigation. |
+| `disabled`, button rendering | `disabled` | Native attribute; the button leaves the tab order. |
+| `disabled`, anchor rendering | `aria-disabled="true"`, `tabindex="-1"` | Provided by `SafeAnchor`; clicks are prevented and the link leaves the tab order. |
+| `iconBefore` / `iconAfter` | `aria-hidden="true"` on the `<svg>` | Icons render through `Icon` with no label — decorative. |
+
+### Screen reader expectations
+
+- Announces its text content and role — e.g. "Save, button". *(Verification pending per the policy's AT matrix.)*
+- With `href`, announces as a link, not a button — users will expect navigation.
+- Icons are silent; the accessible name comes solely from `children`.
+
+### Application responsibilities
+
+- Provide discernible, localized text as `children`. For icon-only actions use [IconButton](/components/iconbutton) instead.
+- Use `href` for navigation and the default button for actions, so the announced role matches the behavior.
+- Don't rely on `variant` color alone to convey meaning (e.g. destructive actions) — the label should carry it.
+- The `as` prop replaces the element entirely; if you pass a custom component, you own its semantics and keyboard support.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the default rendering
+- [Link has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/c487ae/) — the `href` rendering
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — label text across `variant`s
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+None identified in the August 2026 accessibility audit.

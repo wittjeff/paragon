@@ -379,3 +379,65 @@ To get a value without a mask, you need to use `onChange` instead of `onAccept` 
   );
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Control` renders a native `<input>` (or `<textarea>` / `<select>` via `as`) through
+React-Bootstrap 1.6.5. No [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies — native
+HTML form semantics carry the interaction. Inside a `Form.Group`, the control receives its `id` and
+`aria-describedby` wiring from the group context.
+
+### Keyboard support
+
+All keyboard interaction is the native behavior of the rendered element: text editing for
+`input`/`textarea`, <kbd>Arrow Up</kbd>/<kbd>Arrow Down</kbd> option navigation for `as="select"`,
+and so on. Paragon adds no custom key handling; `autoResize` and `inputMask` change what is
+displayed, not how keys behave.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Control | `id` = the group's `controlId` | Provided by `FormGroupContext`; this is what `Form.Label`'s `htmlFor` targets. |
+| Control | `aria-describedby` | The id of every `Form.Control.Feedback` in the group, merged with any `aria-describedby` you pass yourself. |
+| Control with `isValid` / `isInvalid` | *(classes only)* | Renders `is-valid` / `is-invalid` styling classes (provided by React-Bootstrap); `aria-invalid` is **not** set — see Known issues. |
+| Floating label (`floatingLabel`) | `<label>` with `htmlFor` = `controlId` | A real label element, so the floating label is the control's accessible name. |
+| `leadingElement` / `trailingElement` | *(none)* | Rendered in plain decorative `<div>`s; Paragon `Icon`s placed there default to `aria-hidden="true"`. |
+
+### Screen reader expectations
+
+- On focus, the control announces its label (from `Form.Label` or `floatingLabel`), its role
+  ("edit text", "combo box", ...), the current value, and the feedback text via `aria-describedby`.
+  *(Verification pending per the policy's AT matrix.)*
+- Leading and trailing icon decorators are silent (`aria-hidden`) unless you label them.
+- An invalid state is not announced on its own (no `aria-invalid`; see Known issues).
+
+### Application responsibilities
+
+- Use `Form.Control` inside a `Form.Group`; outside one, no `id` or `aria-describedby` is
+  generated and you must wire up a label yourself.
+- Provide exactly one accessible name: a `Form.Label`, a `floatingLabel`, or (last resort) an
+  `aria-label`. `placeholder` is not a label.
+- With `inputMask`, describe the expected format in the label or a `Form.Control.Feedback` — the
+  mask silently reformats the value as the user types.
+- If a `trailingElement` is interactive (e.g. an `IconButton`), give it an accessible name and
+  confirm it is reachable with <kbd>Tab</kbd>.
+- Set `autocomplete` on fields that collect personal data (WCAG 1.3.5).
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — via `Form.Label`, `floatingLabel`, or `aria-label`
+- [Autocomplete attribute has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/73f2c2/)
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-describedby` must reference rendered ids
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+- `isInvalid` (own prop or inherited from the group) only adds the `is-invalid` styling class;
+  `aria-invalid="true"` is not rendered, so assistive technology is not told the field is in an
+  error state — identified in the August 2026 accessibility audit.

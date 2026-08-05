@@ -320,3 +320,84 @@ Note that `Dropzone` does not handle unexpected errors that might happen in your
   )
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Dropzone` is built on [react-dropzone](https://react-dropzone.js.org/) (v14). There is no APG
+pattern for a drag-and-drop file upload; the accessible path is the keyboard/click flow, which
+opens the native file picker. Several structural gaps are tracked in
+[#3957](https://github.com/openedx/paragon/issues/3957) — see Known issues.
+
+### Keyboard support
+
+Provided by react-dropzone:
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> | Moves focus to the dropzone container (`tabindex="0"`). |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Opens the native file picker dialog. |
+
+While an upload is in progress the dropzone is disabled; with the `bar` variant a "Cancel" button
+(a native `<button>` with visible text) becomes the actionable element.
+
+### ARIA roles, states, and properties
+
+What the shipped code renders (confirmed by unit test snapshots):
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Container (`<div>`) | `role="presentation"`, `tabindex="0"` | Provided by react-dropzone. A focusable, keyboard-operable element removed from the accessibility tree and given no accessible name — see Known issues. |
+| File input (`<input type="file">`) | `tabindex="-1"`, visually hidden | No label, `aria-label`, or `title` — no accessible name. |
+| Instruction text ("Drag and drop your file here or click to upload.") | plain `<p>` | Localized, but not programmatically associated with the container or input. |
+| Upload icon | `aria-hidden="true"`, `focusable="false"` | Decorative. |
+| Validation errors (`GenericError`) | `role="alert"` | Provided by React-Bootstrap `Alert`; error text is announced when rendered. |
+| Upload progress (`spinner` variant) | `role="status"`, `aria-live="polite"` | Announces "Uploading &lt;name&gt;, &lt;percent&gt;% done." via the `Spinner`'s visually hidden text. |
+| Upload progress (`bar` variant) | `role="progressbar"`, `aria-valuenow` / `aria-valuemin` / `aria-valuemax` | Provided by React-Bootstrap `ProgressBar`. |
+| Multiple-files drag error (`DragError`) | plain `<div>` | Shown only during a drag; no live region, so it is not announced. |
+
+### Screen reader expectations
+
+- Because the container is `role="presentation"` and the file input is unnamed, focusing the
+  dropzone announces little or nothing useful — likely a bare "clickable" or silence, depending on
+  the screen reader. *(Verification pending per the policy's AT matrix; this is the core defect in
+  [#3957](https://github.com/openedx/paragon/issues/3957).)*
+- Validation errors are announced when they appear (alert). Upload progress with the `spinner`
+  variant is announced politely. *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Until [#3957](https://github.com/openedx/paragon/issues/3957) is resolved, precede the dropzone
+  with visible text (or a heading) describing what to upload, and consider passing `role` and
+  `aria-label` props (they are spread onto the container) to replace `role="presentation"` with
+  `role="button"` plus a name.
+- If you replace the default content via `inputComponent`, keep an equivalent of the instruction
+  text — and remember drag-and-drop is unavailable to keyboard and most screen reader users, so
+  never describe the interaction as drag-only.
+- Supply localized `errorMessages`; the defaults are localized, but custom strings are rendered
+  verbatim.
+- After a successful upload, render a visible, focusable confirmation (this component intentionally
+  renders nothing on success).
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — the hidden file input
+- [Element marked as decorative is not exposed](https://www.w3.org/WAI/standards-guidelines/act/rules/46ca7f/) — `role="presentation"` on a focusable container
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the upload-cancel button
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — progress bar values
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Tracked in [#3957](https://github.com/openedx/paragon/issues/3957), identified in the August 2026
+accessibility audit:
+
+- The focusable, keyboard-operable container has `role="presentation"` and no accessible name
+  (inherited from react-dropzone defaults), and the file input it drives is also unnamed — the
+  control is effectively anonymous to assistive technology (WCAG 4.1.2).
+- The instruction text is not programmatically associated with the control.
+- The multiple-files drag error is not announced (no live region) and only exists during a drag.

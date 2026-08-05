@@ -92,3 +92,72 @@ The arrow modifier positions an inner element of the modal popup so it appears c
 ```
 
 Extra props supplied to ModalPopup are passed through to an underlying PopperElement component.
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`ModalPopup` positions its content next to a trigger element (via Popper) instead of centering it
+over a backdrop. Unlike [`ModalDialog`](/components/modal-dialog) it renders no backdrop and does
+not lock page scroll, but focus is still trapped inside it while it is open. It renders no ARIA role
+of its own — semantics come from the content you pass. No single APG pattern matches; depending on
+your content it can implement the
+[APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/) or a
+lighter-weight disclosure-style popup.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through focusable elements inside the popup. Focus is trapped while the popup is open. |
+| <kbd>Escape</kbd> | Closes the popup (calls `onClose`). **Not** disabled by `isBlocking` — see Known issues. |
+
+Focus management is provided by [react-focus-on](https://github.com/theKashey/react-focus-on): focus
+moves into the popup when it opens and returns to the previously focused element when it closes.
+Clicking outside the popup closes it (`touchstart` events are ignored, so touch scrolling does not
+dismiss it). Page scroll is not locked, so the page behind remains scrollable.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Popup wrapper (`.pgn__modal-popup__tooltip`) | *(none)* | No role or accessible name is rendered — supply them on your content (the unit tests pass a child with `role="dialog"` and `aria-label`). |
+| Arrow (`hasArrow`) | *(none)* | An empty, purely presentational `<div>`; nothing is exposed to assistive technology. |
+| Trigger element (`positionRef`) | *(nothing added)* | `ModalPopup` does not set `aria-expanded` or `aria-haspopup` on the trigger. |
+
+### Screen reader expectations
+
+- With a `role="dialog"` and `aria-label` child (as in the tests), opening should announce the name
+  and "dialog". Without one, no context change is announced. *(Verification pending per the
+  policy's AT matrix.)*
+- Because nothing is set on the trigger, screen reader users are not told the trigger controls a
+  popup or whether it is open — see Application responsibilities.
+
+### Application responsibilities
+
+- Give the popup content a role and accessible name appropriate to its purpose
+  (e.g. `role="dialog"` with `aria-label`).
+- Manage trigger state yourself: set `aria-expanded` (and `aria-haspopup` where appropriate) on the
+  trigger button.
+- Include a visible, keyboard-reachable close control (e.g. `ModalCloseButton`) inside the popup.
+- By default the popup renders in place (`withPortal` is `false`) — keep the trigger and popup
+  adjacent in your component tree so the reading order stays sensible. With `withPortal`, content
+  moves to a portal at the end of `<body>`.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Focusable element has no keyboard trap](https://www.w3.org/WAI/standards-guidelines/act/rules/80af7b/) — the focus trap must provide a keyboard exit (<kbd>Escape</kbd> / a close control)
+- [Role attribute has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/674b10/) — the role you place on the popup content
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — close and action controls inside the popup
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-expanded` you manage on the trigger
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+- The `isBlocking` prop is documented as "Prevent clicking on the backdrop or pressing Esc to close
+  the modal", but it is not wired to dismissal: <kbd>Escape</kbd> and outside clicks always call
+  `onClose` regardless of `isBlocking` (unlike `ModalLayer`, which disables both). Identified in
+  the August 2026 accessibility audit.

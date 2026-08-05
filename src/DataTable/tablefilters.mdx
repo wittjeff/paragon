@@ -297,3 +297,53 @@ all filters will be rendered in the dropdown.
 
 />
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+The built-in filters are standard form controls whose labels are derived from the column's `Header`. Table-wide context is on the [main DataTable Accessibility section](/components/datatable/#accessibility). No dedicated APG pattern applies; each filter uses native form semantics (the dropdown-based filters inherit Paragon [Dropdown](/components/dropdown/#accessibility) behavior).
+
+### Keyboard support
+
+All filters are native form controls: <kbd>Tab</kbd> reaches them, text inputs accept typing directly, <kbd>Space</kbd> toggles checkboxes, and `<select>` elements open with <kbd>Enter</kbd> / <kbd>Space</kbd> / arrow keys. Filters placed in the control bar's "Filters" dropdown or in a `MultiSelectDropdownFilter` are reached by first opening that dropdown (<kbd>Enter</kbd> / <kbd>Space</kbd> on the toggle; <kbd>Escape</kbd> closes it).
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| `TextFilter` input | `<input type="text">` with a visually hidden (`sr-only`) `<label>` "Search {header}" | Label association via `Form.Group` `controlId`; the same text is repeated as `placeholder`. |
+| `CheckboxFilter` group | `role="group"` with `aria-labelledby` pointing at a visible label (the column `Header`) | Each checkbox has a visible label (choice name plus count `Badge`) and an `aria-label` of the choice name. |
+| `DropdownFilter` | `<select>` with `aria-labelledby` pointing at an `sr-only` label (the column `Header`) | The first `<option>` repeats the `Header` text and doubles as the "no filter" value. |
+| `MultiSelectDropdownFilter` | `DropdownButton` whose toggle text is the column `Header` | Contains a `Form.CheckboxSet` with `aria-label` = `Header`; checkboxes labeled as in `CheckboxFilter`. |
+
+### Screen reader expectations
+
+- The text filter announces as "Search Name, edit text" (for a column headed "Name"); the dropdown filter announces the column name and the currently selected option. *(Verification pending per the policy's AT matrix.)*
+- Checkbox choices announce their name and checked state; the result-count badges are visible text within the label. *(Verification pending per the policy's AT matrix.)*
+- Applying a filter updates the table silently: neither the new result set nor the "Filtered by ..." status text is announced (no live region) — see Known issues on the main page.
+
+### Application responsibilities
+
+- Use short, localized string `Header` values — they become the filter labels and placeholders ("Search {header}"). If `Header` is an element, `TextFilter` uses it as-is, so make such elements self-describing.
+- Give `filterChoices` human-readable, localized `name`s; the `number` counts are optional but help users predict results.
+- Custom `Filter` components must bring their own label association — follow the patterns above (visible or `sr-only` label tied to the control).
+- Because filter results are not announced, keep the visible "Filtered by" status (`FilterStatus`) rendered near the table rather than hiding it.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — every filter control
+- [Visible label is part of accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/2ee8b8/) — checkbox choices with `aria-label`
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — dropdown filter toggles, "Clear filters"
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- Filter changes produce no announcement: results update and the "Filtered by ..." text changes without a live region (see the [main DataTable page](/components/datatable/#known-issues)).
+- `TextFilter`'s only visible label is its `placeholder`, which disappears once a value is entered (the persistent label is `sr-only`), leaving sighted users without a visible label while filtering.
+- `DropdownFilter` reuses the column `Header` as its first `<option>`, conflating the label with the "no filter selected" value.

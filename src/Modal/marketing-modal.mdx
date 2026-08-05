@@ -61,3 +61,39 @@ The ``MarketingModal`` is a preconfigured `ModalDialog` that accepts an image an
 }
 ```
 
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`MarketingModal` is a preconfigured composition of [`ModalDialog`](/components/modal-dialog) and
+inherits all of its dialog behavior — `role="dialog"` named by `title`, focus trap and focus return,
+scroll lock, <kbd>Escape</kbd> / backdrop dismissal, `isBlocking` — documented, together with the
+applicable ACT rules, in [ModalDialog's Accessibility section](/components/modal-dialog#accessibility)
+([APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)).
+
+### What MarketingModal adds or changes
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Header | Not rendered | Unlike `StandardModal`, no `ModalDialog.Title` heading is rendered from `title`; the `title` prop becomes only the invisible `aria-label`. Any visible title must come from your `heroNode`. |
+| Hero background (`ModalDialog.Hero.Background`) | CSS `background-image` | The `backgroundSrc` image is applied as a CSS background, so it has no text alternative and is invisible to assistive technology. |
+| Close icon button | Rendered by default | `hasCloseButton` defaults to `true`. The default `closeLabel` is the hard-coded English string "Close", which bypasses `ModalDialog`'s localized default. |
+
+### Application responsibilities
+
+- Include a real heading inside `heroNode` (the example uses `ModalDialog.Title as="h1"` in
+  `ModalDialog.Hero.Content`) that matches or complements the `title` prop — otherwise the dialog
+  has an accessible name but no visible title or heading for sighted and heading-navigation users.
+- Treat `backgroundSrc` as strictly decorative; any information it carries is lost to assistive
+  technology.
+- Ensure text placed over the hero image keeps sufficient contrast at all viewport sizes
+  ([Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/)).
+- Pass a localized `closeLabel` (the built-in default "Close" is hard-coded English), and keep a
+  keyboard-reachable closing action in `footerNode` when using `isBlocking`.
+
+### Known issues
+
+- Inherited from `ModalDialog`: `aria-modal="true"` is not set on the dialog element —
+  [#4402](https://github.com/openedx/paragon/issues/4402), identified in the August 2026
+  accessibility audit.
+

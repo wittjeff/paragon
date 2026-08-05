@@ -145,3 +145,57 @@ These components can be rendered independently of the `TableFooter` component wi
 - `RowStatus` expects to receive `page`, `rows`, and `itemCount` from `DataTableContext`
 - `TablePagination` expects to receive `pageCount`, `state`, and `gotoPage` from `DataTableContext`
 - `TablePaginationMinimal` expects to receive `nextPage`, `previousPage`, `canPreviousPage`, and `canNextPage` from `DataTableContext`
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+The default footer combines a row-count status line and two [Pagination](/components/pagination/) instances. Table-wide context is on the [main DataTable Accessibility section](/components/datatable/#accessibility). Pagination controls live inside `<nav>` landmarks, per common practice for pagination (no formal APG pattern exists for pagination).
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> | Moves focus through the page dropdown toggle and the previous/next buttons. Disabled previous/next buttons are skipped (`disabled` with `tabindex="-1"`). |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Opens the page dropdown or activates a previous/next button. |
+| <kbd>Arrow Up</kbd> / <kbd>Arrow Down</kbd>, <kbd>Escape</kbd> | Within the open page dropdown: move between page items / close it (Paragon [Dropdown](/components/dropdown/#accessibility) behavior). |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Row status (`RowStatus`) | plain `<div>` | Localized "Showing 1 - 10 of 20." text; not a live region. |
+| Page picker (`TablePagination`) | `<nav aria-label="table pagination">` | A reduced-variant `Pagination` rendered with its previous/next icons removed, leaving only a dropdown whose toggle text is "{page} of {count}" (e.g. "2 of 5"). Renders only when there are 2+ pages. |
+| Previous/next (`TablePaginationMinimal`) | `<nav aria-label="table pagination">` | A minimal-variant `Pagination`: icon buttons with `aria-label` "Previous, Page {n}" / "Next, Page {n}". |
+| Page-change announcement | `sr-only` `div` with `aria-live="polite"`, `aria-atomic` | Inside each `Pagination`; announces "Page {x}, Current Page, of {y}" when the page changes. |
+
+Both pagination components render simultaneously in the default footer, producing two `<nav>` landmarks with the identical accessible name "table pagination" (and two parallel live regions) — see Known issues.
+
+### Screen reader expectations
+
+- On page change, "Page 2, Current Page, of 5" is announced politely without moving focus. *(Verification pending per the policy's AT matrix.)*
+- The previous/next buttons announce their target page ("Next, Page 3, button"); at the first/last page they are disabled. *(Verification pending per the policy's AT matrix.)*
+- The row status text ("Showing 4 - 6 of 20.") updates silently; users hear the page announcement instead.
+
+### Application responsibilities
+
+- The "table pagination" `nav` label comes from a localized message (`pgn.DataTable.paginationLabel`); provide translations for your locales.
+- If you replace the footer via `children` or a custom `RowStatusComponent`, keep an equivalent page-change announcement — the built-in one lives inside the `Pagination` components you would be replacing.
+- With multiple `DataTable`s on a page, the identical nav labels multiply; consider distinct labeling via your own footer composition.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — previous/next buttons, dropdown toggle
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-live`, `aria-atomic`
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — status text and disabled controls
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- The default footer renders two `<nav>` landmarks with the same accessible name ("table pagination") and two parallel page-change live regions — one from the page dropdown, one from the previous/next pair — making the landmark list ambiguous and risking duplicate announcements.
+- The row status line is not a live region, so the visible "Showing x - y of z" context updates silently (partially mitigated by the pagination announcement).

@@ -73,3 +73,63 @@ notes: |
   </InputGroup>
 </div>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`InputGroup` is a direct pass-through of
+[React-Bootstrap 1.6.5's InputGroup](https://react-bootstrap-v4.netlify.app/components/input-group/).
+It renders a purely visual `<div class="input-group">` wrapper — no role and no ARIA — so all
+semantic associations between the input, its label, and the addon text are the application's job.
+No [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies. Note that `InputGroup` does
+not participate in `Form.Group`'s id wiring.
+
+### Keyboard support
+
+`InputGroup` itself has no keyboard interaction; the form controls and buttons placed inside it
+keep their native behavior.
+
+### ARIA roles, states, and properties
+
+Provided by React-Bootstrap:
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Container | *(none)* | Plain `<div>`; no `role="group"` and no label. |
+| `InputGroup.Text` | *(none)* | Plain `<span>`; visually adjacent to the input but not programmatically associated with it. |
+| `InputGroup.Checkbox` / `InputGroup.Radio` | *(none)* | Render a bare checkbox or radio `<input>` with no label of any kind — you must supply `aria-label`. |
+
+### Screen reader expectations
+
+- With the wiring shown in the examples above (`aria-label` on the input, `aria-describedby`
+  pointing at the addon's `id`), the input announces its name and then the addon text as its
+  description — e.g. "Username, edit text, @". *(Verification pending per the policy's AT matrix.)*
+- Without that wiring, addon text is only encountered while reading linearly, not when the input
+  receives focus.
+
+### Application responsibilities
+
+- Name the input: an external `<label htmlFor>` or an `aria-label` (the visual layout usually
+  precludes a conventional label position — see the examples above).
+- Give addon `InputGroup.Text` elements an `id` and reference them from the input's
+  `aria-describedby` whenever the addon is needed to understand the value (e.g. "$",
+  "@example.com").
+- Always pass `aria-label` to `InputGroup.Checkbox` / `InputGroup.Radio`.
+- Prefer `Form.Group` + `Form.Control` with `leadingElement` / `trailingElement` when you don't
+  specifically need Bootstrap's input-group styling — that path wires ids automatically.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — the input's name is entirely consumer-supplied here
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — hand-written `aria-describedby` must reference existing ids
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — addon text
+
+### Known issues
+
+- `InputGroup.Checkbox` and `InputGroup.Radio` render an unlabeled `<input>` (provided by
+  React-Bootstrap); without a consumer-supplied `aria-label` the control has no accessible name —
+  identified in the August 2026 accessibility audit.

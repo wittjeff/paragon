@@ -82,3 +82,68 @@ A generic component for creating accessibile modal layer objects. The modal laye
   )
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`ModalLayer` is the low-level focus-management primitive underneath
+[`ModalDialog`](/components/modal-dialog) and its variants. It provides modal *behavior* — focus
+trap, scroll lock, dismissal — but renders no dialog semantics of its own: the child you pass must
+itself be the dialog element (`role="dialog"` with `aria-label` or `aria-labelledby`). Used that
+way, the result implements the
+[APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/); see also
+[ModalDialog's Accessibility section](/components/modal-dialog#accessibility) for the higher-level
+component built on this one.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through focusable elements inside the layer. Focus is trapped: it cannot reach the page behind the layer while it is open. |
+| <kbd>Escape</kbd> | Closes the layer (calls `onClose`). Disabled when `isBlocking` is set. |
+
+Focus management is provided by [react-focus-on](https://github.com/theKashey/react-focus-on): when
+the layer opens, focus moves into it; when it closes, focus returns to the element that was focused
+before it opened. Page scroll is locked while the layer is open, and clicking or tapping the
+backdrop calls `onClose` unless `isBlocking` is set.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Layer container (`.pgn__modal-layer`) | *(none)* | `ModalLayer` renders no role and no accessible name — see Application responsibilities. |
+| Backdrop | `role="presentation"` | Removed from the accessibility tree. |
+
+The layer is rendered through a portal into `#paragon-portal-root` at the end of `<body>`, outside
+your app's DOM order; the focus trap, not DOM position, keeps keyboard users inside it.
+
+### Screen reader expectations
+
+- Announcements depend entirely on the child you provide. With `role="dialog"` and
+  `aria-label="My dialog"` (as in the examples above), opening should announce "My dialog, dialog".
+  *(Verification pending per the policy's AT matrix.)*
+- Without a role and accessible name on the child, screen reader users receive no indication that a
+  modal context has opened.
+
+### Application responsibilities
+
+- Give the child element `role="dialog"` and an accessible name (`aria-label` or
+  `aria-labelledby`) — `ModalLayer` does not do this for you.
+- Consider `aria-modal="true"` on your dialog element so screen readers scope reading commands to
+  it; with `ModalLayer` the dialog element is yours to author.
+- Include a visible heading and at least one keyboard-reachable control that calls `onClose`
+  (e.g. `ModalCloseButton`) — essential with `isBlocking`, which disables <kbd>Escape</kbd> and
+  backdrop dismissal.
+- Prefer `ModalDialog` or one of its variants unless you need this level of control.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Focusable element has no keyboard trap](https://www.w3.org/WAI/standards-guidelines/act/rules/80af7b/) — the focus trap must provide a keyboard exit (<kbd>Escape</kbd> / a close control)
+- [Role attribute has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/674b10/) — the role you place on the child element
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — close controls you render inside the layer
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Element with aria-hidden has no content in sequential focus navigation](https://www.w3.org/WAI/standards-guidelines/act/rules/6cfa84/) — background content while the layer is open

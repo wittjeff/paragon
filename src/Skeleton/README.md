@@ -166,3 +166,37 @@ By wrapping the ``Skeleton`` in a container, you can flexibly customize the elem
     </>
 )}
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Skeleton` re-exports [react-loading-skeleton](https://github.com/dvtng/react-loading-skeleton) (v3.x) unchanged. It is a purely visual loading placeholder; no [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies. It renders static, non-focusable content and has no keyboard interaction.
+
+### ARIA roles, states, and properties
+
+Provided by react-loading-skeleton:
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Container `<span>` | `aria-live="polite"` | |
+| Container `<span>` | `aria-busy="true"` | While the animation is enabled (the default); `false` with `enableAnimation={false}`. |
+| Skeleton line `<span>`s | *(no role)* | Contain only a zero-width non-joiner character — no readable text. |
+
+### Screen reader expectations
+
+- The skeleton itself announces nothing: the live region contains no readable text, and `aria-busy="true"` marks the region as not ready. *(Verification pending per the policy's AT matrix.)*
+- When your real content replaces the skeleton, the live region unmounts with it — the replacement content is **not** announced automatically.
+
+### Application responsibilities
+
+- Convey the loading state in text: pair the skeleton with a visually hidden status message (e.g. a `role="status"` region containing localized "Loading…") and announce completion if it matters, or manage announcements at a higher level.
+- Size skeletons (`width`, `height`, `count`) to match the content that replaces them, so the swap doesn't shift layout.
+- Never put information in the skeleton itself — it is invisible to assistive technology.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-live`, `aria-busy`

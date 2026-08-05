@@ -102,3 +102,30 @@ Display informative text related to an object on screen. Unlike the tooltip an a
 }
 
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Annotation` is a non-interactive, always-visible text callout; no [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies (unlike a tooltip, it has no trigger). It renders static content and has no keyboard interaction of its own.
+
+### ARIA roles, states, and properties
+
+No ARIA attributes are rendered: the annotation is a plain styled `<span>`, read as ordinary text. The arrow (`arrowPlacement`) is purely visual — there is no programmatic association between the annotation and the element it points at.
+
+### Screen reader expectations
+
+- The annotation's text is read in DOM order as ordinary content; its variant color and arrow direction are not conveyed. *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Place the annotation immediately before or after the element it refers to in the DOM, so the relationship survives without the visual arrow; if proximity alone is ambiguous, write text that names its subject.
+- Don't rely on the variant color (`error`, `success`, `warning`) to carry meaning — say it in the text (WCAG 1.4.1 Use of Color).
+- Keep annotations text-only: no links or interactive elements (use [Popover](/components/popover) instead, as noted above).
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — annotation text against each variant background

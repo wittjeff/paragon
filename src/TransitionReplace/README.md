@@ -130,3 +130,34 @@ function DemoTransitionReplace() {
   );
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`TransitionReplace` is an animation wrapper: it renders plain `<div>`s (a `TransitionGroup` container plus one wrapper per child) with no ARIA attributes, cross-fading between the outgoing and incoming child and animating the container height. The outgoing child is **unmounted** when its exit transition ends (`unmountOnExit`). It has no keyboard interaction of its own; no [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies.
+
+### ARIA roles, states, and properties
+
+No ARIA roles, states, or properties are rendered. Content replacement is not announced — there is no live region.
+
+### Screen reader expectations
+
+- Swapped-in content is not announced; users discover it only by navigating to it. *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- **Manage focus across the swap.** If the user's focus is inside the outgoing child (e.g. the "Toggle to editing" example above replaces a form the user may be focused in), the element is removed from the DOM and focus falls back to the document body. After a user-initiated swap, move focus to a sensible element in the new content (WCAG 2.4.3).
+- If the replacement conveys a status change that the user must notice without focusing it, announce it yourself (e.g. an `aria-live` region or moving focus to a heading in the new content) — the component will not (WCAG 4.1.3).
+- The crossfade and height animation run unconditionally (see Known issues). For motion-sensitive users, consider disabling or shortening the transition via `enterDuration`/`exitDuration` and the transition CSS when `prefers-reduced-motion: reduce` matches (WCAG 2.3.3).
+- Trigger replacements from user action; auto-swapping content on a timer additionally raises WCAG 2.2.2 (Pause, Stop, Hide) obligations.
+
+### Relevant ACT rules
+
+No ACT rule targets transition animations directly; the relevant WCAG criteria (2.4.3 Focus Order, 4.1.3 Status Messages, 2.3.3 Animation from Interactions) are noted above. For content that changes automatically, see:
+
+- [Text content that changes automatically can be paused, stopped or hidden](https://www.w3.org/WAI/standards-guidelines/act/rules/efbfc7/) — only if you rotate content on a timer
+
+### Known issues
+
+- The component's stylesheet animates opacity and container height with no `prefers-reduced-motion` guard, unlike other animated Paragon components (e.g. `Spinner`, `ProgressBar`, which wrap their animations in the reduced-motion media query). Identified in the August 2026 accessibility audit.

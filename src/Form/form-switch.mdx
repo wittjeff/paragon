@@ -211,3 +211,72 @@ A helper text component can be passed in to be rendered below the switch control
   </Form.SwitchSet>
 </Form.Group>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Switch` renders a native `<input type="checkbox">` with `role="switch"`, following the
+[APG switch pattern](https://www.w3.org/WAI/ARIA/apg/patterns/switch/): native checkbox keyboard
+behavior with switch (on/off) semantics.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus to the next / previous switch; each switch is its own tab stop. |
+| <kbd>Space</kbd> | Toggles the focused switch (native checkbox activation). |
+
+Paragon adds no JavaScript key handling; all keyboard behavior is native.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Control | `<input type="checkbox">` with `role="switch"` | Covered by unit tests. The native checked state conveys on/off. |
+| Control | `id` | Uses the `id` prop, or an auto-generated `form-field-*` id. |
+| Label (`<label>`) | `for` = control id | The `children` of `Form.Switch` are the switch's accessible name. |
+| `helperText` (`<div>`) | *(no association)* | Rendered below the switch but **not** referenced by `aria-describedby` — see Known issues. |
+| `Form.SwitchSet` container (`<div>`) | `role="group"` + `aria-labelledby` | `Form.SwitchSet` is the same component as `Form.CheckboxSet`. |
+
+Unlike `Form.Checkbox`, the `isValid`, `isInvalid`, and `description` props are deliberately
+ignored by `Form.Switch`.
+
+### Screen reader expectations
+
+- A focused switch announces its label, "switch", and on/off state — e.g. "I want pizza, switch,
+  off". Some screen reader/browser pairings still announce role "checkbox"; this is exactly what
+  the policy's AT verification pass will record. *(Verification pending per the policy's AT
+  matrix.)*
+- `helperText` is not announced when the switch receives focus, because it is not programmatically
+  associated (see Known issues).
+
+### Application responsibilities
+
+- Always provide label `children`; when using the bare `SwitchControl`, supply `aria-label` (as the
+  example above does).
+- Until the `helperText` association gap is fixed, put text a user must hear in the label itself,
+  or associate your own element via `aria-describedby`.
+- Avoid `isIndeterminate` with switches: `role="switch"` has no mixed state (see Known issues).
+- Switches imply an immediate effect when toggled. If the change only applies after a form submit,
+  use `Form.Checkbox` instead so semantics match behavior.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — each switch, and bare `SwitchControl` usage
+- [Element with role attribute has required states and properties](https://www.w3.org/WAI/standards-guidelines/act/rules/4e8ab6/) — `switch` requires a checked state (supplied natively by the checkbox)
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/)
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit (code-verified, not yet filed):
+
+- `helperText` is rendered as a plain `<div>` with no id and no `aria-describedby` association, so
+  assistive technology users do not hear it in the context of the switch.
+- The "Indeterminate Usage" example works visually, but `role="switch"` does not support a mixed
+  state — assistive technology reports an indeterminate switch as simply off. Use a checkbox when
+  a mixed state is meaningful.

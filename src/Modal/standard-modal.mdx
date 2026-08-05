@@ -48,3 +48,35 @@ The standard `ModalDialog` composition. `StandardModal` passes all of its props 
   )
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`StandardModal` is a preconfigured composition of [`ModalDialog`](/components/modal-dialog) and adds
+no interaction of its own. All dialog behavior — `role="dialog"` with `aria-label` from `title`,
+focus trap and focus return, scroll lock, <kbd>Escape</kbd> / backdrop dismissal, `isBlocking` — and
+the mapping to the [APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
+are inherited and documented, together with the applicable ACT rules, in
+[ModalDialog's Accessibility section](/components/modal-dialog#accessibility).
+
+### What StandardModal adds or changes
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Title | `<h2>` via `ModalDialog.Title` | Rendered automatically from the required `title` prop (also the dialog's `aria-label`), so the dialog's purpose is reachable by heading navigation. |
+| Close icon button | Rendered by default | `hasCloseButton` defaults to `true`. The default `closeLabel` is the hard-coded English string "Close" (`STANDARD_MODAL_CLOSE_LABEL`), which bypasses `ModalDialog`'s localized default. |
+
+### Application responsibilities
+
+- Supply a meaningful, localized `title`.
+- Pass a localized `closeLabel` — the built-in default "Close" is not run through
+  `ModalDialog`'s localized message.
+- Give every action in `footerNode` a discernible accessible name, and keep at least one
+  keyboard-reachable way to close the dialog when using `isBlocking`.
+
+### Known issues
+
+- Inherited from `ModalDialog`: `aria-modal="true"` is not set on the dialog element —
+  [#4402](https://github.com/openedx/paragon/issues/4402), identified in the August 2026
+  accessibility audit.

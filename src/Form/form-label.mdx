@@ -70,3 +70,53 @@ it has an htmlFor attribute matching the `Form.Control` according to WCAG guidel
   <Form.Control floatingLabel="What kind of cats?" />
 </Form.Group>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Label` renders a native `<label>` whose `htmlFor` is supplied by the surrounding
+`Form.Group` context, associating it with the group's control. When the group contains a grouped
+control (`Form.RadioSet` / `Form.CheckboxSet`), it renders a `<p id="...">` instead, and the set
+references it via `aria-labelledby`. No
+[APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies; this is the native HTML labeling
+technique.
+
+### Keyboard support
+
+`Form.Label` renders static text and has no keyboard interaction of its own. (As a native
+`<label>`, clicking or tapping it moves focus to the associated control.)
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Label (default) | `<label>` with `htmlFor` = group `controlId` | The label text becomes the control's accessible name. |
+| Label (grouped control in the same `Form.Group`) | `<p>` with a generated (or explicit) `id` | Referenced by the set's `aria-labelledby`; a `<label>` cannot natively label a `role="group"` / `role="radiogroup"` container, hence the element switch. |
+
+### Screen reader expectations
+
+- The label text announces as the accessible name of the associated control (or of the
+  radio/checkbox group). *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Use `Form.Label` inside a `Form.Group`. Outside one there is no context: it renders a bare
+  `<label>` with no `htmlFor`, associated with nothing (pass `htmlFor` yourself if you must use it
+  standalone).
+- Keep label text concise and descriptive; if a design hides it, render it visually hidden
+  (`className="sr-only"`) rather than omitting it.
+- Do not place interactive elements inside the label.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — this component is normally how a field gets its name
+- [Form field label is descriptive](https://www.w3.org/WAI/standards-guidelines/act/rules/cc0f0a/)
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — label text
+
+### Known issues
+
+No issues identified in the August 2026 accessibility audit.

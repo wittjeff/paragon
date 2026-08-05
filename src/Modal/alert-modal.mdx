@@ -136,3 +136,60 @@ const [isOpen, open, close] = useToggle(false);
   )
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`AlertModal` is a preconfigured composition of [`ModalDialog`](/components/modal-dialog) and inherits
+all of its dialog behavior — `role="dialog"` with `aria-label` from `title`, focus trap and focus
+return, scroll lock, and <kbd>Escape</kbd> / backdrop dismissal (both disabled by `isBlocking`) — as
+documented in [ModalDialog's Accessibility section](/components/modal-dialog#accessibility). Its
+intended use matches the [APG alert dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/),
+but see the deviation below.
+
+### What AlertModal adds or changes
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Dialog container | `role="dialog"` | Inherited unchanged from `ModalDialog` — **not** `role="alertdialog"`; see deviation. |
+| Title | `<h2>` via `ModalDialog.Title` | Rendered automatically from the required `title` prop (which is also the dialog's `aria-label`). |
+| Title `icon` | `aria-hidden="true"` | The variant icon is rendered without a label, so `Icon` marks it decorative and hides it from assistive technology. |
+| Close icon button | Not rendered by default | `hasCloseButton` defaults to `false`; dismissal is expected to come from `footerNode` actions. |
+
+**Deviation from the APG pattern:** although this component is presented as an alert dialog, it
+renders `role="dialog"` rather than `role="alertdialog"` (and, inherited from `ModalDialog`, no
+`aria-modal="true"`). Screen readers announce it as an ordinary dialog with no alert semantics.
+Identified in the August 2026 accessibility audit; see Known issues.
+
+### Screen reader expectations
+
+- On open, the dialog announces its accessible name and the generic "dialog" role — e.g. "Heads up!,
+  dialog" — not as an alert dialog. *(Verification pending per the policy's AT matrix.)*
+- The variant icon is not announced; urgency must be carried by the title and body text.
+
+### Application responsibilities
+
+- Always supply `footerNode` with at least one keyboard-reachable action that closes the dialog —
+  the close icon button is off by default, and with `isBlocking` set, <kbd>Escape</kbd> and backdrop
+  dismissal are disabled as well.
+- Do not rely on the variant color or icon alone to convey severity; state the consequence in the
+  `title` or body text.
+- If you enable `hasCloseButton`, pass a localized `closeLabel` — `AlertModal`'s default is the
+  hard-coded English string "Close", which bypasses `ModalDialog`'s localized default.
+
+### Relevant ACT rules
+
+The [rules listed for ModalDialog](/components/modal-dialog#relevant-act-rules) apply unchanged; in
+addition:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the action buttons you pass in `footerNode`
+
+### Known issues
+
+- `role="alertdialog"` is not used, so assistive technology receives no alert semantics for what is
+  designed as an alert dialog (deviation from the APG alert dialog pattern) — identified in the
+  August 2026 accessibility audit.
+- Inherited from `ModalDialog`: `aria-modal="true"` is not set on the dialog element —
+  [#4402](https://github.com/openedx/paragon/issues/4402), identified in the August 2026
+  accessibility audit.

@@ -349,3 +349,50 @@ const MiyazakiCard = ({ className, original  }) => {
   );
 };
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`DataTable.Table` renders a native HTML table; its semantics, keyboard behavior, and known issues are documented in the [main DataTable Accessibility section](/components/datatable/#accessibility). This section covers what changes in `CardView`. No APG pattern applies to a card grid; it is plain document content.
+
+### Keyboard support
+
+`CardView` adds no keyboard behavior of its own. Focus moves through whatever interactive elements your `CardComponent` renders, plus the selection checkbox next to each card when `isSelectable` is set. The surrounding filter, action, and pagination controls behave as in table view.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Card grid (`CardGrid`) | *(no role)* | A `div`-based responsive grid — no table, list, or grid semantics. Reading order is DOM order. |
+| Card | consumer-provided | `CardView` renders your `CardComponent` per row; its semantics are yours. |
+| Selection checkbox | `<input type="checkbox" title="Toggle Row Selected">` | The same selection component as table view; named only by react-table's default `title` (see the main page's Known issues). |
+| Loading state | *(no role)* | Skeleton cards replace content while `isLoading` is set; the swap is not announced. |
+
+### Screen reader expectations
+
+- Cards read as ordinary page content in DOM order — there is no "x of y" item context, because the grid has no list semantics. *(Verification pending per the policy's AT matrix.)*
+- A card's selection checkbox announces as "Toggle Row Selected, checkbox", with nothing tying it to the card it selects. *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- All row context lives in your `CardComponent`: include the fields a table row would have shown, and start each card with a heading (e.g. `Card.Header` `title`) so screen reader users can navigate card to card by heading.
+- Give images in cards meaningful `alt`/`srcAlt` text, or empty alternatives when decorative.
+- If cards are selectable, keep the primary identifying text adjacent to the checkbox in DOM order to mitigate the generic checkbox name.
+- When using the card/list view toggle, note that view switches are not announced (see [TableControlBar](/components/datatable/tablecontrolbar#accessibility)).
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — card selection checkboxes
+- [Image has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/23a2a8/) — card images
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- Card collections have no list semantics (plain `div` grid), so assistive technology gets no item count or position when browsing cards.
+- Card selection checkboxes share the table view's generic, unlocalized `title`-based name ("Toggle Row Selected") and are not programmatically associated with their card — tracked with the selection naming issue on the [main DataTable page](/components/datatable/#known-issues).

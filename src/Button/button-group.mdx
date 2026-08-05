@@ -64,3 +64,51 @@ notes: |
   </ButtonGroup>
 </ButtonToolbar>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`ButtonGroup` and `ButtonToolbar` are grouping containers provided by React-Bootstrap; the buttons inside them keep their own semantics. No APG pattern exists for a plain button group; the [APG toolbar pattern](https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/) applies to `ButtonToolbar` — see the deviation below.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus between buttons; every button in a group or toolbar is its own tab stop. |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activates the focused button (native button behavior). |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| `ButtonGroup` | `role="group"` | Provided by React-Bootstrap (default; overridable via the `role` prop). |
+| `ButtonToolbar` | `role="toolbar"` | Provided by React-Bootstrap (default). |
+
+Neither component renders a label of its own — pass `aria-label` or `aria-labelledby`, as the examples above do.
+
+**Deviation from the APG pattern:** `role="toolbar"` signals single-tab-stop arrow-key navigation between controls, but `ButtonToolbar` renders only a styled container — React-Bootstrap 1.6.5 adds no roving tabindex or arrow-key handling, so keyboard users tab through every button individually. Identified in the August 2026 accessibility audit; see Known issues.
+
+### Screen reader expectations
+
+- Entering a labeled group announces the label and "group" (or "toolbar") before the first button. *(Verification pending per the policy's AT matrix.)*
+- Unlabeled groups announce nothing extra — buttons read as if ungrouped.
+
+### Application responsibilities
+
+- Label every group and toolbar (`aria-label` or `aria-labelledby`), especially when a page contains more than one.
+- Keep each button's own accessible name distinct; the group label does not replace it.
+- If you override `role`, ensure the replacement role's keyboard expectations are met.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — every button in the group
+- [Role attribute has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/674b10/) — custom `role` values
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+- `ButtonToolbar` exposes `role="toolbar"` without the toolbar keyboard model (no roving tabindex or arrow-key navigation) — inherited from React-Bootstrap 1.6.5, identified in the August 2026 accessibility audit.

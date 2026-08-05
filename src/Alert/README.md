@@ -168,3 +168,53 @@ The stacked variant should be used for:
   </p>
 </Alert>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+Paragon's `Alert` wraps [React-Bootstrap's Alert](https://react-bootstrap-v4.netlify.app/components/alerts/) and follows the [APG alert pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alert/): a live region that announces a brief, important message when it appears, without moving focus. One deviation is noted below.
+
+### Keyboard support
+
+The alert itself is not focusable and has no keyboard interaction of its own. The optional dismiss button (`dismissible`) and call-to-action buttons (`actions`) are native buttons reached with <kbd>Tab</kbd> and activated with <kbd>Enter</kbd> / <kbd>Space</kbd>; `Alert.Link` renders a regular link.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Alert container | `role="alert"` | Provided by React-Bootstrap; implies an assertive, atomic live region. Present whenever the alert is shown. |
+| Dismiss button | `<button>` with visible text | Paragon renders its own text button — a localized "Dismiss" by default, overridable via `closeLabel`. React-Bootstrap's icon-only close button is not used. |
+| Icon (`icon` prop) | `aria-hidden="true"` on the `svg` | Decorative; hidden from assistive technology. |
+| `Alert.Heading` | `<div class="h4">` by default | Styled as a heading but not exposed as one — pass `as="h3"` (or the level that fits your page outline) to support heading navigation. |
+
+**Deviation from the APG pattern:** the alert pattern is for non-interactive messages — content that requires user action points to the [alert dialog pattern](https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/) instead. With `dismissible` and/or `actions`, Paragon renders buttons inside the `role="alert"` live region. Identified in the August 2026 accessibility audit; see Known issues.
+
+### Screen reader expectations
+
+- When an alert appears after page load (`show` becomes `true`, or the alert mounts), its content is announced immediately, interrupting other speech, without moving focus. *(Verification pending per the policy's AT matrix.)*
+- Alerts present in the initial page render are read in place as ordinary content, not announced.
+- The dismiss button announces as "Dismiss, button" (or your `closeLabel`).
+- The severity variant (success, danger, ...) is conveyed only by color and the optional decorative icon; it is not announced.
+
+### Application responsibilities
+
+- Start the message with text that conveys severity when it matters ("Error:", "Success:") — the variant color and icon are invisible to screen reader users.
+- Keep alert content brief; `role="alert"` interrupts assertively. For less urgent messages consider [PageBanner](/components/pagebanner) (polite) or plain page content.
+- You control `show` — when the user dismisses an alert, move focus somewhere sensible (e.g. the control or region that produced the alert); the focused dismiss button disappears with it.
+- Localize `closeLabel` if the built-in translated "Dismiss" doesn't fit your context.
+- If the message requires a decision before the user continues, use `AlertModal` instead of an alert.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — dismiss and action buttons
+- [Link has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/c487ae/) — `Alert.Link`
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — message text against variant backgrounds
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/) — buttons and links inside the alert
+
+### Known issues
+
+- Dismiss and action buttons render inside the `role="alert"` live region; the APG reserves the alert role for non-interactive content and points interactive messages to the alert dialog pattern — identified in the August 2026 accessibility audit.

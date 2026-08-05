@@ -65,3 +65,31 @@ ActionRow can also be used with a helper component ``ActionRow.Spacer`` to inser
   </Button>
 </ActionRow>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`ActionRow` is a layout utility: it renders a plain `<div>` (or the `as` element) with flexbox styling and adds no ARIA attributes of its own. No APG pattern applies. `ActionRow.Spacer` renders an empty `<span>`.
+
+ActionRow renders static layout and has no keyboard interaction of its own; children keep their own semantics, and focus moves through them in DOM order.
+
+### ARIA roles, states, and properties
+
+No ARIA attributes are rendered.
+
+**Focus order in stacked mode (identified in the August 2026 accessibility audit):** `isStacked` reverses the *visual* order with `flex-direction: column-reverse`, so the primary action (the last child) appears at the top while remaining last in the DOM. Keyboard focus and screen reader reading order still follow DOM order, so a sighted keyboard user reaches the visually first control last — a WCAG 1.3.2 (Meaningful sequence) and 2.4.3 (Focus order) concern. An open fix, [openedx/paragon#4271](https://github.com/openedx/paragon/pull/4271), aligns DOM and visual order.
+
+### Application responsibilities
+
+- Pass the primary action as the last child — both layouts assume this.
+- Until #4271 lands, weigh the stacked layout's reversed focus order when the row contains more than one focusable action.
+- If you change `as`, keep it a semantically neutral container (or own the semantics of what you pass).
+
+### Relevant ACT rules
+
+No ACT rule tests layout and focus order directly; the stacked-mode concern above falls under WCAG 1.3.2 and 2.4.3, which are evaluated manually.
+
+### Known issues
+
+- Stacked mode's visual order does not match DOM/focus order (`flex-direction: column-reverse`) — identified in the August 2026 accessibility audit; open fix in [openedx/paragon#4271](https://github.com/openedx/paragon/pull/4271).

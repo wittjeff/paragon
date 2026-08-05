@@ -435,3 +435,68 @@ also required for steps to rerender correctly here.
   )
 }
 ```
+
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Stepper` is Paragon's own component. The APG has no dedicated stepper/wizard pattern; the closest fit is a step list rendered as an ordinary list, with step state exposed via text and `aria-current="step"`. The shipped implementation renders the list but exposes step **state** only visually — see the deviation and Known issues below.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through the interactive elements: clickable header steps (if any), the active step's content, and the active `Stepper.ActionRow` buttons. Non-clickable header steps are static text and receive no focus. |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activates a clickable header step or an action-row button (native button activation). |
+
+A header step is only interactive when its `onClick` prop is set **and** the step has already been visited (and is not the active step); it then renders as a `<button>`. Inactive `Stepper.Step` content and inactive `Stepper.ActionRow`s are unmounted entirely, so hidden steps are never reachable.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Header step list | `<ul class="pgn__stepper-header-step-list">` | One entry per registered step. |
+| Header step (non-clickable) | `<li>` | Contains the number/check bubble, `title`, and `description` as plain text. |
+| Header step (clickable) | `<button type="button">` with `aria-label` = "`{title}` step" | Rendered *in place of* the `<li>`, as a direct child of the `<ul>` (see Known issues). The `description` is excluded from the accessible name, and the " step" suffix is hard-coded English. |
+| Step separators | `<li aria-hidden="true">` | Decorative connecting lines. |
+| Completed-step check icon, error icon | `aria-hidden="true"`, `role="img"` | Hidden from assistive technology with no text alternative (see Known issues). |
+| Active/completed/error state | *(CSS classes only)* | `pgn__stepper-header-step-active`, `-complete`, `-has-error`; no `aria-current="step"` or other ARIA state is rendered. |
+| Compact header (below `compactWidth`) | single step + "Step X of Y" text | The lone step still renders as an `<li>`, now outside any list (see Known issues); the page count is plain (hard-coded English) text. |
+| Active step content (`Stepper.Step`) | `<div class="pgn__stepper-step">` | No role; only the active step renders. |
+
+**Deviation identified in the August 2026 accessibility audit:** which step is active, which are completed, and which have errors is conveyed exclusively by color, icons, and CSS classes. A screen reader user reading the full-width header hears only step numbers, titles, and descriptions — with no indication of progress or errors (WCAG 1.3.1/4.1.2, and use-of-color under 1.4.1).
+
+### Screen reader expectations
+
+- The full-width header reads as a list of step numbers and titles, e.g. "1, Welcome, 2, Chooseth a cat..." with no state information. *(Verification pending per the policy's AT matrix.)*
+- The compact header reads the active step's number and title followed by "Step X of Y" — the only place progress is announced.
+- A clickable header step announces as "`{title}` step, button".
+
+### Application responsibilities
+
+- Move focus (or at minimum ensure reading order restarts sensibly) when the active step changes — the component performs no focus management, and the previous step's content unmounts under the user. Starting each `Stepper.Step` with a heading, as in the examples above, gives the new step a navigable anchor.
+- Because header error states are not announced, surface validation errors inside the step content itself (e.g. with form field feedback or an `Alert`), not only via `hasError`.
+- Supply `index` on every `Stepper.Step` when using `hasError` or conditional steps, so header order stays correct.
+- Keep `title` (and `description`) concise and localized; remember the compact "Step X of Y" counter and the clickable step's " step" label suffix are currently English-only.
+- Provide an always-available forward path via `Stepper.ActionRow` buttons; header-step navigation (`onClick`) is a supplement, not a replacement, since it only works for visited steps.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — clickable header steps and action-row buttons
+- [ARIA required owned elements](https://www.w3.org/WAI/standards-guidelines/act/rules/bc4a75/) — the header `<ul>` must own list items, not bare buttons
+- [ARIA required context role](https://www.w3.org/WAI/standards-guidelines/act/rules/ff89c9/) — the compact view's `<li>` requires a list parent
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — muted titles/descriptions of inactive steps
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- Step states (active, completed, error) are not programmatically exposed: no `aria-current="step"`, and the check/error icons are `aria-hidden` with no text alternative, so progress and errors in the header are invisible to assistive technology.
+- A clickable header step replaces its `<li>` with a `<button>` rendered as a direct child of the `<ul>` — invalid list structure that also drops the step's list position ("2 of 3") from what screen readers can report.
+- The compact (below `compactWidth`) header renders the active step as an `<li>` with no parent list.
+- Clickable header steps wire both `onKeyPress={onClick}` and the native button click, so activating one with <kbd>Enter</kbd> can invoke the `onClick` handler twice.

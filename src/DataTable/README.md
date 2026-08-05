@@ -1690,3 +1690,77 @@ After selecting the maximum possible number of rows, you can display an error me
   );
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`DataTable.Table` renders a native HTML table (`<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>`), matching the [APG table pattern](https://www.w3.org/WAI/ARIA/apg/patterns/table/). It does not use `role="grid"`, so screen reader users read it with standard table commands rather than grid arrow-key navigation — appropriate, since cells themselves are not interactive widgets. Sortable tables should additionally follow the APG [sortable table example](https://www.w3.org/WAI/ARIA/apg/patterns/table/examples/sortable-table/) (header buttons plus `aria-sort`); the current sortable-header implementation deviates from it (see below). The surrounding controls — filters ([TableFilters](/components/datatable/tablefilters)), control bar ([TableControlBar](/components/datatable/tablecontrolbar)), and footer ([TableFooter](/components/datatable/tablefooter)) — are documented on their own pages.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through the interactive controls around and inside the table: filter fields, selection checkboxes, expand/collapse buttons, action buttons, and pagination controls. Sortable column headers are **not** in the tab sequence (see Known issues). |
+| <kbd>Space</kbd> | On a selection checkbox: toggles selection of the row (or of all rows on the page, in the header checkbox). |
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | Activates buttons: expand/collapse toggles, "Select all" / "Clear selection", table and bulk actions, pagination. |
+
+Sorting is currently mouse-only: react-table's sort toggle props (a click handler) are spread onto the `<th>` element itself, which is not focusable. <kbd>Shift</kbd> + click adds a column to a multi-column sort. Keyboard operation is added by the in-flight fix [#4345](https://github.com/openedx/paragon/pull/4345) — see Known issues.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Table | native `<table>` / `<thead>` / `<tbody>` semantics | No `<caption>`, `aria-label`, or `aria-labelledby` — the table has no accessible name (see Application responsibilities). |
+| Column header | `<th>` | No `scope="col"` (relies on browser inference; added by [#4345](https://github.com/openedx/paragon/pull/4345)). |
+| Sortable column header | `title="Toggle SortBy"`, click handler on the `<th>` | react-table defaults. No nested button, no `tabindex`, no `aria-sort`. |
+| Sort direction icons | `aria-hidden="true"` | Decorative `Icon` svgs — sort state is conveyed visually only. |
+| Body row | `<tr>` with `is-selected` class when selected | Selection state is programmatically exposed only on the row's checkbox (`checked`). |
+| Row selection checkbox | `<input type="checkbox" title="Toggle Row Selected">` | Accessible name comes solely from react-table's default `title` attribute — identical for every row, not localized. |
+| Header (select all) checkbox | `title="Toggle All Current Page Rows Selected"` (paginated) or `title="Toggle All Rows Selected"` | Indeterminate state is set via the DOM `indeterminate` property. Not rendered when `maxSelectedRows` is set; when the maximum is reached, unchecked row checkboxes are `disabled`. |
+| Expand-row toggle (`DataTable.ExpandRow`) | `<button aria-label="Expand row">` / `"Collapse row"` inside a `<span>` carrying react-table's click handler and `title="Toggle Row Expanded"` | No `aria-expanded` or `aria-controls`. The expanded content renders as a plain following `<tr><td colSpan>`. Labels are hard-coded English. |
+| Expand-all toggle (`DataTable.ExpandAll`) | `<button>` with localized text "Expand all" / "Collapse all", inside a `<span>` carrying the click handler | Activation works because button clicks bubble to the wrapping span. No `aria-expanded`. |
+| Loading spinner | `role="status"` with visually hidden text "loading" | Provided by `Spinner` when `isLoading` is set. The text is hard-coded, not localized. |
+| Empty state (`DataTable.EmptyTable`) | plain `<div>` | Not a live region; its appearance is not announced. |
+
+**Deviation from the APG sortable table pattern:** sortable headers are not operable by keyboard, expose no `aria-sort` state, and hide their direction icons from assistive technology. Identified in the August 2026 accessibility audit; an in-flight fix is open as [#4345](https://github.com/openedx/paragon/pull/4345). See Known issues.
+
+### Screen reader expectations
+
+- Data cells announce with their column header context through native table semantics — e.g. "Name, Lil Bub". *(Verification pending per the policy's AT matrix.)*
+- Header cells announce as column headers with their text; whether a column is sortable, and its current sort direction, are **not** announced (no `aria-sort`, icons hidden).
+- Every row's selection checkbox announces the same name, "Toggle Row Selected, checkbox" — it does not identify which row it selects. *(Verification pending per the policy's AT matrix.)*
+- While `isLoading` is set, the spinner's status region exposes "loading".
+- Pagination page changes are announced politely ("Page 2, Current Page, of 5") by the pagination's built-in live region — see [TableFooter](/components/datatable/tablefooter).
+- Changes to the row/selection/filter status text ("Showing 1 - 10 of 20.", "2 selected", "Filtered by Name") are **not** announced — these are plain text, not live regions.
+
+### Application responsibilities
+
+- The table has no accessible name. Precede it with a heading or visible context that identifies what the table contains; if you compose your own children, consider labeling the region.
+- Column `Header` values become header-cell text and are reused as filter labels ("Search Name") — keep them short, meaningful, and localized strings where possible.
+- Content you inject — custom `Cell` renderers, `additionalColumns` action cells, `bulkActions`/`tableActions` components — must be independently accessible: buttons and links need discernible, distinct names ("Assign Lil Bub", not seven identical "Assign" buttons).
+- If you build a custom expander column, use a real `<button>` with `aria-expanded` rather than a bare `<span {...row.getToggleRowExpandedProps()}>` — the bare-span version (as shown in the "With custom expander column" example above) is not keyboard reachable.
+- Localize user-facing strings you control: `EmptyTable` content, status texts (`statusText`, `clearFiltersText`, selection texts), and action labels.
+- Keep `itemCount` accurate — it feeds the row and selection status text users rely on.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Table header cell has assigned cells](https://www.w3.org/WAI/standards-guidelines/act/rules/d0f69e/) — every `<th>` must relate to data cells
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — selection checkboxes and filter fields
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — expand toggles, actions, pagination controls
+- [ARIA state or property is permitted](https://www.w3.org/WAI/standards-guidelines/act/rules/5c01ea/) — the view toggle sets `aria-selected` on buttons (see TableControlBar)
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/)
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — status text and disabled-looking controls
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- Sortable headers are not keyboard operable and expose no sort state: the sort toggle is a click handler on the `<th>` (with react-table's default `title="Toggle SortBy"`), there is no `aria-sort`, and header cells lack `scope="col"`. An in-flight fix, [#4345](https://github.com/openedx/paragon/pull/4345) (open at the time of writing), renders a native button inside the `<th>`, adds `aria-sort` on the primary sorted column, and adds `scope="col"`.
+- Selection checkboxes are named only by react-table's default `title` attributes ("Toggle Row Selected", "Toggle All Current Page Rows Selected") — generic, identical across rows, and not localized.
+- Expand/collapse toggles do not expose `aria-expanded`, and `ExpandRow`'s "Expand row" / "Collapse row" labels are hard-coded English (not passed through `react-intl`, unlike `ExpandAll`).
+- State changes outside pagination are silent: row/selection/filter status text and the empty-state message are not live regions, and the spinner's "loading" text is not localized.

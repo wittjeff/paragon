@@ -971,3 +971,62 @@ Includes support for an optional `title` and `subtitle`. You may rely on the def
   );
 }
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Card` is a structural container: it renders `<div>` elements and adds no ARIA roles of its own. No [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) exists for cards as such; the interactive elements you place inside a card (links, buttons, form fields) carry their own semantics. The two behaviors that most affect accessibility are the `isClickable` prop and `Card.ImageCap` alt text.
+
+### Keyboard support
+
+A card renders static content and has no keyboard interaction of its own. Interactive elements inside it (header `actions`, footer buttons, links) keep their native keyboard behavior. Props that change focus behavior:
+
+| Prop | Effect |
+| --- | --- |
+| `isClickable` | Adds `tabindex="0"` plus hover/focus styling only. The card becomes a tab stop, but <kbd>Enter</kbd> / <kbd>Space</kbd> activate nothing — no role and no key handler are added (see Known issues). |
+| `as` (e.g. `as={Hyperlink}`) | Renders the card as that element; an interactive `as` gives the whole card real link/button keyboard behavior. |
+| `CardDeck` — `hasInteractiveChildren` | When `false` (the default), the deck row gets `tabindex="0"` so horizontally scrollable cards remain keyboard-reachable; set it to `true` when the cards themselves are focusable so the row is not an extra tab stop. |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Card container | *(no role)* | `<div class="pgn__card card">`; `tabindex` is `0` when `isClickable`, otherwise `-1`. |
+| `Card.ImageCap` image and logo | `alt` = `srcAlt` / `logoAlt` props | Both props are optional with no default — when omitted, the rendered `<img>` has no `alt` attribute and no accessible name (see Known issues). |
+| `Card.Header` title and subtitle | *(no role)* | Rendered as `<div>` elements, not headings. Pass a heading element via `title` when the card title belongs in your page's heading outline. |
+| `Card.Status` | *(no role)* | Static `<div>` structure; its `icon` renders via `Icon` with no label and is therefore `aria-hidden` (decorative). |
+| Loading state (`isLoading`) | — | Content is replaced with `react-loading-skeleton` placeholders; `Card` itself adds no loading announcement (the skeleton library's own output is not verified here). |
+
+### Screen reader expectations
+
+- A card is read as its content in document order; the card boundary itself is not announced.
+- With `isClickable`, focus lands on the card and only its text content is read — no role or interaction is announced, because none is exposed. *(Verification pending per the policy's AT matrix.)*
+- With an interactive `as` element (e.g. `as={Hyperlink}`), the card announces with that element's role and the card's text as its name.
+
+### Application responsibilities
+
+- Make a whole-card click target a real interactive element (`as={Hyperlink}`, or a single link inside the card) — do not rely on `isClickable` plus an `onClick` handler, which is mouse-only.
+- Always set `srcAlt` (and `logoAlt`) on `Card.ImageCap`: a description when the image conveys information, or an explicit empty string (`srcAlt=""`) when it is decorative. The same `alt` remains in place if the image falls back to `fallbackSrc` or the built-in placeholder, so keep it accurate for that case too.
+- Keep card titles in the page heading structure by passing a heading element (e.g. `title={<h3 className="..." >...</h3>}`) to `Card.Header`, as the CardCarousel example above does.
+- Do not nest interactive elements (header `actions`, footer buttons) inside a card rendered as a link.
+- On `CardDeck` and `CardCarousel`, pass `hasInteractiveChildren` when the cards are clickable/focusable, and a meaningful `ariaLabel` to `CardCarousel`.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Image has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/23a2a8/) — `Card.ImageCap` image and logo
+- [Image not in the accessibility tree is decorative](https://www.w3.org/WAI/standards-guidelines/act/rules/e88epe/) — decorative image caps need `alt=""`
+- [Link has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/c487ae/) — cards rendered `as` a link
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — header `actions` and footer buttons
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/) — `isClickable` focus styling
+- [Scrollable content can be reached with sequential focus navigation](https://www.w3.org/WAI/standards-guidelines/act/rules/0ssw9k/) — `CardDeck` horizontal scrolling
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- `isClickable` makes the card a focusable `<div>` with no role, no accessible name, and no keyboard activation — a tab stop that does nothing for keyboard and assistive technology users, while any consumer-attached `onClick` remains mouse-only (WCAG 2.1.1, 4.1.2). Non-clickable cards also receive an unnecessary `tabindex="-1"`.
+- `Card.ImageCap` renders `<img>` elements with no `alt` attribute at all when `srcAlt` / `logoAlt` are omitted, so images default to failing the image-name check rather than defaulting to decorative.

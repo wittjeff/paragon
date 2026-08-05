@@ -174,3 +174,101 @@ Form auto-suggest enables users to manually select or type to find matching opti
   );
 };
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Autosuggest` implements an editable combobox with a filterable listbox popup, based on the
+[APG combobox pattern](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/), with several deviations
+noted below.
+
+### Keyboard support
+
+| Key | Action |
+| --- | --- |
+| Printable characters | Typing in the input filters the option list as you type. Clearing the input closes the list. |
+| <kbd>Arrow Down</kbd> / <kbd>Arrow Up</kbd> | Moves focus between the input and the visible options, wrapping at either end of the list. |
+| <kbd>Home</kbd> / <kbd>End</kbd> | Moves focus to the first element (the input) / the last visible option. |
+| <kbd>Enter</kbd> | On an option: selects it, fills the input, and closes the list. On the input: opens the list. |
+| <kbd>Escape</kbd> | Closes the list and returns focus to the input. |
+| <kbd>Tab</kbd> | Leaves the control: the list closes and validation (`isValueRequired`, `isSelectionRequired`, `hasCustomError`) runs. |
+
+Arrow-key handling is provided by Paragon's `useArrowKeyNavigation` hook; note that focus really
+moves into the list (see the deviations below). The dropdown arrow icon button is removed from the
+tab sequence (`tabIndex="-1"`) — it is a mouse affordance whose localized accessible name ("Open the
+options menu" / "Close the options menu") reflects the popup state.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Text input (`FormControl`) | `role="combobox"` | Accessible name comes from the consumer (see Application responsibilities). |
+| Text input | `aria-autocomplete="list"`, `autocomplete="off"` | |
+| Text input | `aria-expanded` | `"true"` while at least one filtered option is rendered (see deviations). |
+| Text input | `aria-owns="pgn__form-autosuggest__dropdown-box"` | Static id reference to the listbox (see deviations). |
+| Text input | `aria-activedescendant` | Set to the id of the option focused via arrow keys; cleared when the list closes. |
+| Text input | `aria-invalid` | Receives the error message *string*, not a boolean (see deviations). |
+| Options list (`<ul>`) | `role="listbox"`, `id="pgn__form-autosuggest__dropdown-box"` | Always present in the DOM; options are rendered into it while the popup is open. |
+| Option (`Form.AutosuggestOption`, `<li>`) | `role="option"`, `tabindex="-1"` | Accessible name is the option text. `aria-selected` is not set. |
+| Options count region (visually hidden `<div>`) | `aria-live="assertive"` | Announces the number of options whenever the filtered list changes. |
+
+**Deviations from the APG pattern (identified in the August 2026 accessibility audit):**
+
+- The listbox `id` is hardcoded, so two `Form.Autosuggest` instances on one page produce duplicate
+  ids and ambiguous `aria-owns` references.
+- The input uses `aria-owns` where the current APG pattern uses `aria-controls`.
+- `aria-expanded` tracks "filtered options exist" rather than popup state: an open popup with zero
+  matches (or the loading spinner) reports `aria-expanded="false"`.
+- DOM focus genuinely moves to options while `aria-activedescendant` is also maintained on the
+  input — the APG pattern expects one mechanism or the other, not both.
+- `aria-invalid` is set to the error message text; valid values are boolean-ish tokens, so this
+  fails ARIA value rules and may not convey the invalid state.
+- The live region text (`"3 options found"`) is hardcoded English (not routed through
+  `react-intl`), and `assertive` is more disruptive than the `polite` level this announcement needs.
+
+### Screen reader expectations
+
+- Focusing the input announces its label, "combobox" (with edit-text behavior), and the
+  expanded/collapsed state. *(Verification pending per the policy's AT matrix.)*
+- Opening or filtering the list triggers an immediate announcement such as "3 options found".
+  *(Verification pending; note this interrupts other speech because the region is assertive.)*
+- Arrowing into the list announces the focused option's text and "option". Position ("2 of 4") and
+  selected state may not be announced because `aria-selected` and `aria-posinset` are not rendered.
+  *(Verification pending per the policy's AT matrix.)*
+
+### Application responsibilities
+
+- Give the input an accessible name: wrap it in `Form.Group` with `Form.Label`, or supply
+  `floatingLabel` or `aria-label`. Without one the combobox is unnamed (see the ACT rule below).
+- Supply localized text for every enabled validation message (`valueRequiredErrorMessageText`,
+  `selectionRequiredErrorMessageText`, `customErrorMessageText`) and for the loading spinner's
+  `screenReaderText`.
+- Give each `Form.AutosuggestOption` a stable `id` so `onChange`'s `selectionId` and
+  `aria-activedescendant` reference meaningful ids.
+- Keep option text short and unique — it is both the accessible name and the match target for
+  filtering.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — the combobox input
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the dropdown toggle icon button
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-expanded`, `aria-invalid`, `aria-activedescendant`
+- [ARIA required context role](https://www.w3.org/WAI/standards-guidelines/act/rules/ff89c9/) — `option` must be owned by a `listbox`
+- [ARIA required owned elements](https://www.w3.org/WAI/standards-guidelines/act/rules/bc4a75/) — the `listbox` must own `option` elements
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit (code-verified, not yet filed):
+
+- The hardcoded listbox id `pgn__form-autosuggest__dropdown-box` breaks pages with more than one
+  `Form.Autosuggest` (duplicate ids, ambiguous `aria-owns`).
+- `aria-invalid` receives the error message string instead of `true`/`false`.
+- `aria-expanded` reports collapsed while the popup is open with no matching options.
+- The "options found" live region is unlocalized English and uses `aria-live="assertive"`.
+- Focus movement into options combined with `aria-activedescendant` deviates from the APG combobox
+  pattern.

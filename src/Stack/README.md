@@ -55,3 +55,26 @@ Stacks are vertical by default and stacked items are full-width by default. Watc
   <div className="border p-2">third block</div>
 </Stack>
 ```
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Stack` is a flexbox wrapper: it renders a single `<div>` with `pgn__vstack`/`pgn__hstack` classes. There is no matching [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/).
+
+Stack renders static content and has no keyboard interaction of its own. No ARIA attributes are rendered.
+
+**Direction and visual order caveat:** the `reversed` prop is implemented purely in CSS (`flex-direction: column-reverse` / `row-reverse`). It reverses the visual order without changing DOM order, so reading order and <kbd>Tab</kbd> order run opposite to what sighted users see (WCAG 1.3.2, 2.4.3).
+
+### Application responsibilities
+
+- When the order of stacked items is meaningful — and always when they are interactive (buttons, links, form fields) — reorder the children in source instead of using `reversed`.
+- Reserve `reversed` for purely decorative arrangements where sequence carries no meaning.
+- The stack itself conveys no semantics; if the items form a list, render a real list (`<ul>`/`<li>`) as the stack's content — `Stack` has no `as` prop and always renders a `<div>`.
+
+### Relevant ACT rules
+
+No ACT rule tests CSS flexbox ordering directly; conformance with WCAG 1.3.2 (Meaningful sequence) and 2.4.3 (Focus order) when `reversed` is used requires manual review of the rendered page.
+
+### Known issues
+
+None identified in the August 2026 accessibility audit.

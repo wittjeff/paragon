@@ -88,3 +88,56 @@ The following example demonstrates how to use `OverflowScroll` and `OverflowScro
   );
 };
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`OverflowScroll` is a headless building block for horizontally scrollable content. It renders a labeled `region` landmark and manages the overflow container's focusability so that scrollable content stays keyboard-reachable ([ACT rule 0ssw9k](https://www.w3.org/WAI/standards-guidelines/act/rules/0ssw9k/)). No [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) maps to a scroll container as such.
+
+### Keyboard support
+
+Behavior depends on `hasInteractiveChildren`:
+
+| Configuration | Keyboard behavior |
+| --- | --- |
+| `hasInteractiveChildren={false}` (default) | The overflow container receives `tabindex="0"`: <kbd>Tab</kbd> focuses it, and <kbd>Arrow Left</kbd> / <kbd>Arrow Right</kbd> scroll it natively (unless `disableScroll` also hides overflow). |
+| `hasInteractiveChildren={true}` | The container receives `tabindex="-1"` and is skipped; <kbd>Tab</kbd> moves through the focusable children instead, and the browser scrolls each focused child into view (a `focusin` listener keeps the active-item index in sync). |
+
+The component ships no scroll buttons of its own — `scrollToPrevious`/`scrollToNext` from `OverflowScrollContext` are wired to consumer-rendered controls, as in the example above.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Wrapper | `role="region"` | Exposes the scroller as a landmark. |
+| Wrapper | `aria-label` = `ariaLabel` prop | Required prop; the region's accessible name. |
+| Overflow container (your `setOverflowRef` element) | `tabindex` | `0` or `-1` per `hasInteractiveChildren`, applied via DOM effect. |
+
+The start/end opacity masks are purely visual (CSS `mask-image`) and change nothing in the accessibility tree, though they reduce the visible contrast of partially masked items.
+
+### Screen reader expectations
+
+- The wrapper announces as a region named by `ariaLabel` when entered or listed among landmarks. *(Verification pending per the policy's AT matrix.)*
+- Scrolling itself is silent; users experience the content linearly in DOM order.
+
+### Application responsibilities
+
+- Provide a meaningful, localized `ariaLabel` — it is a required prop and the region's name.
+- Set `hasInteractiveChildren` truthfully. Declaring `true` while rendering only static children removes the container from the tab order and (with `disableScroll`) leaves overflowed content unreachable by keyboard.
+- Render visible scroll controls (real `Button`s/`IconButton`s with accessible names) wired to `scrollToPrevious`/`scrollToNext`; prefer disabling them at the start/end (as in the example above) over unmounting them, so keyboard focus is not dropped.
+- Keep DOM order equal to visual order — assistive technology reads the items in DOM order regardless of scroll position.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Scrollable content can be reached with sequential focus navigation](https://www.w3.org/WAI/standards-guidelines/act/rules/0ssw9k/) — the `tabindex` management described above
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — consumer-rendered scroll controls
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/) — the focusable overflow container and controls
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — content under the start/end opacity masks
+
+### Known issues
+
+No code-verified accessibility defects are currently known in `OverflowScroll` itself; the risks above are configuration responsibilities of the consuming application.

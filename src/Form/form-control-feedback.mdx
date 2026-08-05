@@ -76,3 +76,62 @@ those using the React Bootstrap component.
   </Form.Group>
 </>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Control.Feedback` renders help or validation text in a plain `<div>` whose generated id is
+registered with the surrounding `Form.Group`, which adds it to the control's `aria-describedby`.
+No [APG pattern](https://www.w3.org/WAI/ARIA/apg/patterns/) applies; this is the standard
+described-by technique for form field descriptions.
+
+### Keyboard support
+
+`Form.Control.Feedback` renders static content and has no keyboard interaction of its own.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| Feedback container | `id` (generated or explicit) | Added to the group control's `aria-describedby`; multiple feedback elements in one group are all appended. |
+| Feedback container | *(no role, no live region)* | Plain `<div>` — feedback that appears dynamically is not announced; see Known issues. |
+| Type icon (`hasIcon`, default `true`) | `aria-hidden="true"` | Paragon `Icon` hides unlabeled icons from assistive technology; the icon is decorative. |
+
+The `type` (`valid`, `invalid`, `warning`, ...) affects only the color and the decorative icon — it
+adds no ARIA semantics.
+
+### Screen reader expectations
+
+- The feedback text reads as part of the control's description when the control receives focus.
+  *(Verification pending per the policy's AT matrix.)*
+- Feedback that appears after a user action (e.g. a validation error shown on submit) is not
+  announced at the moment it appears.
+
+### Application responsibilities
+
+- Render it inside the same `Form.Group` as the control; outside a group, the id wiring does not
+  happen.
+- Write text whose meaning is complete in words — "Password must be at least 8 characters", not
+  "Invalid" implied by a red icon; the color and icon are not conveyed to assistive technology.
+- When showing errors dynamically, also move focus to the invalid control or provide an announced
+  error summary — the component does not announce for you.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Text has minimum contrast](https://www.w3.org/WAI/standards-guidelines/act/rules/afw4f7/) — feedback text, including the `muted` variant
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — the feedback id must be a valid `aria-describedby` reference on the control
+
+### Known issues
+
+Identified in the August 2026 accessibility audit:
+
+- The feedback container is not a live region (no `role="alert"` / `aria-live`), so validation
+  errors that appear dynamically are not announced by screen readers until the user refocuses the
+  field.
+- The valid/invalid/warning distinction is conveyed only by color and an `aria-hidden` icon;
+  combined with the missing `aria-invalid` on Form.Control, a screen reader user hears the
+  feedback text without its status.

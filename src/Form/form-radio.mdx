@@ -166,3 +166,72 @@ This is supported, but not recommended.
   <Form.Radio className="ml-2" name="color" value="cyan" disabled>Cyan</Form.Radio>
 </>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`Form.Radio` renders a native `<input type="radio">`, and `Form.RadioSet` wraps the options in a
+labeled `role="radiogroup"` container. Selection behavior is the browser's native radio behavior,
+which matches the [APG radio group pattern](https://www.w3.org/WAI/ARIA/apg/patterns/radio/).
+
+### Keyboard support
+
+All keyboard behavior is native browser behavior for same-`name` radio inputs; Paragon adds no
+JavaScript key handling.
+
+| Key | Action |
+| --- | --- |
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus into the radio group (to the selected radio, or the first radio if none is selected) and out of it. The group is a single tab stop. |
+| <kbd>Arrow Down</kbd> / <kbd>Arrow Right</kbd> | Moves focus to the next radio and selects it. |
+| <kbd>Arrow Up</kbd> / <kbd>Arrow Left</kbd> | Moves focus to the previous radio and selects it. |
+| <kbd>Space</kbd> | Selects the focused radio if it is not already selected. |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+| --- | --- | --- |
+| `Form.RadioSet` container (`<div>`) | `role="radiogroup"` | |
+| `Form.RadioSet` container | `aria-labelledby` | References the surrounding `Form.Group`'s `Form.Label` (rendered as a `<p>` with a generated id). Covered by unit tests. |
+| Each option | `<input type="radio">` | Native role and checked state; the shared `name` comes from the `Form.RadioSet` `name` prop. |
+| Each option | `id` | Uses the `id` prop, or an auto-generated `form-field-*` id. |
+| Option label (`<label>`) | `for` = input id | The `children` of `Form.Radio` are the radio's accessible name. |
+| Option | `aria-describedby` | Points at the `description` prop's element when one is provided. |
+
+### Screen reader expectations
+
+- Focusing into the group announces the group label (e.g. "Which Color?"), then the focused radio's
+  label, "radio button", selected state, and position in the group. *(Verification pending per the
+  policy's AT matrix.)*
+- Arrowing between options announces each newly selected option. *(Verification pending per the
+  policy's AT matrix.)*
+
+### Application responsibilities
+
+- Wrap `Form.RadioSet` in a `Form.Group` with a `Form.Label` — that label is what names the
+  `radiogroup`.
+- Give every `Form.Radio` label `children`; when using the bare `RadioControl`, supply an
+  `aria-label` — a bare control has no accessible name of its own.
+- Prefer `Form.RadioSet` over the standalone usage shown above: standalone radios have no
+  `radiogroup` container or group label, so users hear unrelated radios as one unnamed group.
+- Because `isValid` / `isInvalid` are conveyed by styling only (see Known issues), pair them with
+  visible text: the `description` prop or a `Form.Control.Feedback` inside the group.
+
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Form field has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/e086e5/) — each radio, and bare `RadioControl` usage
+- [ARIA required owned elements](https://www.w3.org/WAI/standards-guidelines/act/rules/bc4a75/) — the `radiogroup` owns natively-roled radios
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-labelledby` / `aria-describedby` id references
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
+### Known issues
+
+Identified in the August 2026 accessibility audit (code-verified, not yet filed):
+
+- `isInvalid` / `isValid` only toggle CSS classes; `aria-invalid` is never set on the input, so the
+  error state itself is not exposed to assistive technology.
+- The "Unlabeled Control" example on this page renders `RadioControl` without an `aria-label`,
+  producing radios with no accessible name — do not copy it verbatim.
