@@ -1,0 +1,117 @@
+---
+title: Accessibility policy
+---
+
+# Accessibility policy
+
+This page states Paragon's accessibility commitment: the standard we target, how we verify it, how we
+document and disclose gaps, and how to reach us. It makes explicit what has long been practiced
+implicitly in Paragon's code, and it governs both the component library (`@openedx/paragon`) and this
+documentation site.
+
+## Conformance target
+
+Paragon targets **WCAG 2.2 Level AA** conformance for all stable components, consistent with the
+[Open edX platform requirement](https://docs.openedx.org/en/latest/developers/concepts/accessibility.html)
+that merged features conform to Level AA of WCAG 2.2.
+
+For interaction design and ARIA usage, components follow the
+[W3C ARIA Authoring Practices Guide (APG)](https://www.w3.org/WAI/ARIA/apg/) patterns, honoring the
+APG's own caveat that patterns must be verified with real assistive technology before production use.
+Where a component deviates from its APG pattern — deliberately or as a known gap — the deviation is
+recorded in that component's Accessibility section.
+
+## What "accessible" means per component
+
+A Paragon component meets this policy when:
+
+1. **Keyboard**: all functionality is operable with a keyboard alone, without traps, with a visible
+   focus indicator.
+2. **Name, role, value**: every interactive element has an accessible name; roles, states, and
+   properties are exposed per the relevant APG pattern (or a documented deviation).
+3. **Contrast**: text and essential non-text elements meet AA contrast in the default theme.
+4. **Assistive technology**: expected screen reader behavior is documented and has been verified
+   against the testing matrix below.
+5. **Documentation**: the component's page carries an Accessibility section with a keyboard table,
+   an ARIA roles/states/properties table, expected screen reader announcements, application
+   responsibilities, and known issues.
+
+## Per-component accessibility documentation
+
+Every component page includes (or will include, as sections are migrated) an **Accessibility**
+section with this structure:
+
+- **Keyboard support** — a key-by-key interaction table.
+- **ARIA roles, states, and properties** — what the shipped implementation actually renders, with a
+  link to the corresponding APG pattern and any deviations called out explicitly.
+- **Screen reader expectations** — what assistive technology should announce on focus, activation,
+  and state change, noting the verification status per screen reader/browser pairing.
+- **Application responsibilities** — what the consuming application must provide for an accessible
+  result (labels, focus flows, context).
+- **Known issues** — confirmed gaps, linked to their GitHub issues, disclosed on the page rather
+  than hidden in the tracker.
+
+Each section carries a "last reviewed" date and the Paragon version it describes.
+
+## Verification
+
+**Current, automated:**
+
+- `eslint-plugin-jsx-a11y` runs on every change in CI; violations block merge.
+- Runtime [axe-core](https://github.com/dequelabs/axe-core) validation in development builds is an
+  accepted architecture decision
+  ([ADR 0017](https://github.com/openedx/paragon/blob/master/docs/decisions/0017-runtime-a11y-validation.rst)).
+
+Automated tooling finds only a minority of real-world issues, so it is a floor, not the bar.
+
+**Manual, against this assistive technology matrix** (the minimum set; combinations beyond it are
+welcome in community testing):
+
+| Screen reader | Browser | Platform |
+|---|---|---|
+| NVDA | Chrome, Firefox | Windows |
+| JAWS | Chrome | Windows |
+| VoiceOver | Safari | macOS and iOS |
+| TalkBack | Chrome | Android |
+
+Manual verification also covers keyboard-only operation, 200% zoom / 320&nbsp;px reflow, and
+Windows High Contrast / forced-colors mode.
+
+**Verification status** is reported per component as one of: **Verified** (tested against the matrix
+at a stated version), **Partially verified** (some combinations or variants outstanding), or
+**Documented, verification pending** (behavior documented from source; AT testing not yet performed).
+An honest "pending" is required over an unstated assumption.
+
+## Contributions
+
+Accessibility is an acceptance criterion, not a review suggestion. A change to an interactive
+component is expected to:
+
+- keep all functionality keyboard-operable with visible focus;
+- preserve or supply accessible names, roles, states, and properties;
+- pass lint (`jsx-a11y`) and automated checks;
+- update the component's Accessibility section when behavior changes — a keyboard or ARIA change
+  that isn't reflected in the documentation is an incomplete change;
+- request an accessibility review in the Paragon Working Group
+  ([#wg-paragon](https://openedx.slack.com/archives/C02NR285KV4)) for substantial interaction changes.
+
+## Known issues and disclosure
+
+Confirmed accessibility defects are labeled in the
+[GitHub issue tracker](https://github.com/openedx/paragon/issues?q=is%3Aissue+label%3Aa11y) and
+disclosed in the affected component's Accessibility section until fixed. Evidenced issues (reported
+from real usage or assistive technology testing) are prioritized over theoretical ones.
+
+## Feedback
+
+If you find an accessibility problem in a Paragon component or in this site,
+[open a GitHub issue](https://github.com/openedx/paragon/issues/new/choose) (mention accessibility in
+the title) or raise it in [#wg-paragon](https://openedx.slack.com/archives/C02NR285KV4). Reports that
+name the assistive technology, browser, and expected vs. actual behavior can be acted on fastest.
+
+## Governance
+
+This policy is maintained by the Paragon Working Group under the stewardship of
+[Axim Collaborative](https://axim.org/), which also commissions periodic external accessibility
+audits of the system; audit findings are recorded as issues and reflected in per-component known
+issues and verification statuses.

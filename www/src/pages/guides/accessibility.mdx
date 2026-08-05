@@ -1,0 +1,81 @@
+---
+title: Accessibility
+---
+
+# Accessibility
+
+Paragon exists so that every learner can use applications built on Open edX, regardless of ability or
+assistive technology. Accessibility is a core requirement of this design system, not an enhancement:
+the Open edX project requires that merged features conform to
+[WCAG 2.2 Level AA](https://www.w3.org/TR/WCAG22/), and Paragon is the component layer where much of
+that conformance is delivered. See the [Accessibility policy](/guides/accessibility-policy) for the
+formal commitment, testing approach, and governance.
+
+This guide explains how the responsibility is shared between Paragon and your application, and how to
+use and verify Paragon components accessibly.
+
+## What Paragon provides — and what it can't
+
+Paragon components implement the structural accessibility of each pattern: semantic HTML, ARIA roles,
+states and properties, keyboard interaction, and focus management (for example, `ModalDialog` traps
+focus while open, closes on <kbd>Escape</kbd>, and returns focus when dismissed). Each component's
+documentation page includes an **Accessibility** section describing exactly what is implemented:
+keyboard support, the ARIA it renders, expected screen reader behavior, and any known issues.
+
+**Using Paragon does not by itself make your application accessible.** The design system cannot know
+your content or context. Your application remains responsible for, at minimum:
+
+- **Accessible names.** Many components require you to supply a label — `ModalDialog`'s `title`,
+  `IconButton`'s `alt`, `aria-label` on icon-only or ambiguous controls. A component with an empty or
+  meaningless label is inaccessible no matter how correct its internals are.
+- **Page structure.** Heading hierarchy, landmarks, page titles, and reading order are set where
+  components are composed, not inside them.
+- **Focus flows between components.** Paragon manages focus *within* a component; your application
+  decides where focus goes after content is added, removed, or replaced (after deleting a list item,
+  submitting a form, or closing a custom flow).
+- **Meaningful text.** Link and button text, error messages, instructions, and alternative text for
+  images and media are content decisions.
+- **Color as information.** Paragon's theme meets contrast requirements, but if you convey status by
+  color alone, add a text or icon equivalent.
+- **Testing in context.** Component-level verification cannot cover a composed page. Test your
+  application with keyboard and assistive technology (see below).
+
+## Using components accessibly
+
+- **Read the component's Accessibility section first.** It states the component's keyboard contract,
+  the ARIA it renders, and — importantly — the *Application responsibilities* it expects you to meet.
+- **Prefer the semantic prop.** Where a component accepts `as` (for example `ModalDialog.Title`,
+  which defaults to `h2`), choose the element that fits your page's heading structure rather than
+  restyling a generic one.
+- **Keep required label props meaningful and localized.** Props like `title`, `closeLabel`,
+  `screenReaderText`, and `alt` are announced verbatim by screen readers; run them through your
+  i18n layer as you would visible text.
+- **Use visually-hidden text for context.** The `sr-only` utility class attaches screen-reader-only
+  text where visual context alone carries meaning (for example, a notification count on a tab).
+- **Don't suppress built-in behavior without a replacement.** If you disable dismissal
+  (`isBlocking` on modals, `autoClose={false}` on dropdowns), you take over responsibility for
+  providing an obvious, keyboard-reachable way out.
+
+## Verifying your application
+
+Automated checkers are necessary but not sufficient — they typically detect well under half of real
+accessibility issues. Layer your verification:
+
+1. **Automated checks.** Run [axe](https://github.com/dequelabs/axe-core) (browser extension,
+   `jest-axe`, or CI integration) on composed pages. Paragon itself lints with
+   `eslint-plugin-jsx-a11y` and is adopting runtime axe validation
+   ([ADR 0017](https://github.com/openedx/paragon/blob/master/docs/decisions/0017-runtime-a11y-validation.rst)).
+2. **Keyboard pass.** Unplug the mouse: every interactive element reachable and operable with
+   <kbd>Tab</kbd>/<kbd>Shift+Tab</kbd>, arrow keys, <kbd>Enter</kbd>/<kbd>Space</kbd>, and
+   <kbd>Escape</kbd>; focus always visible; no traps.
+3. **Screen reader smoke test.** Walk your critical flows with at least one screen reader per
+   platform you support — NVDA or JAWS on Windows, VoiceOver on macOS/iOS, TalkBack on Android.
+   Component pages document *expected announcements* to compare against.
+4. **Zoom and reflow.** Verify at 200% zoom and 320&nbsp;px-equivalent width (WCAG 1.4.10).
+
+## References
+
+- [Paragon Accessibility policy](/guides/accessibility-policy)
+- [Open edX developer accessibility guidelines](https://docs.openedx.org/en/latest/developers/concepts/accessibility.html) — the platform-wide WCAG 2.2 AA requirement
+- [WCAG 2.2](https://www.w3.org/TR/WCAG22/) and the [WCAG quick reference](https://www.w3.org/WAI/WCAG22/quickref/)
+- [W3C ARIA Authoring Practices Guide (APG)](https://www.w3.org/WAI/ARIA/apg/) — the interaction patterns Paragon components reference

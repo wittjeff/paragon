@@ -121,3 +121,51 @@ You can use `Dropdown.Toggle` with [IconButton](/components/iconbutton) componen
   </Dropdown.Menu>
 </Dropdown>
 ```
+
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+Paragon's `Dropdown` wraps [React-Bootstrap's Dropdown](https://react-bootstrap-v4.netlify.app/components/dropdowns/). It behaves as a **disclosure that reveals a list of links or buttons** — it does *not* implement the ARIA `menu`/`menuitem` roles of the [APG menu button pattern](https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/). See the deviation note below.
+
+### Keyboard support
+
+Provided by React-Bootstrap / react-overlays:
+
+| Key | Action |
+|---|---|
+| <kbd>Enter</kbd> / <kbd>Space</kbd> | On the toggle: opens or closes the menu (native button activation). |
+| <kbd>Arrow Down</kbd> | On the toggle: opens the menu and moves focus to the first item. In the menu: moves focus to the next item. |
+| <kbd>Arrow Up</kbd> | In the menu: moves focus to the previous item. |
+| <kbd>Escape</kbd> | Closes the menu and returns focus to the toggle. |
+| <kbd>Tab</kbd> | Moves focus out; the menu closes. |
+| <kbd>Enter</kbd> | On an item: activates it (follows the link or fires the button). |
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+|---|---|---|
+| Toggle (`Dropdown.Toggle`) | `<button>` | Native button semantics; requires an `id` ("necessary for assistive technologies"). |
+| Toggle | `aria-haspopup="true"` | See deviation note — announces a popup that is not exposed as an ARIA menu. |
+| Toggle | `aria-expanded` | Reflects open/closed state. |
+| Menu (`Dropdown.Menu`) | *(no role)* | Rendered as a plain container; items are links (`href`) or buttons. |
+| Item (`Dropdown.Item`) | `<a>` or `<button>` | Link when `href` is set; otherwise button-like anchor. |
+
+**Deviation from the APG pattern:** the toggle sets `aria-haspopup="true"` (which announces "menu" in most screen readers), but the popup itself has no `role="menu"` and items have no `role="menuitem"` — inherited from Bootstrap's intentional avoidance of ARIA menu semantics. The result is a mixed signal: users are told to expect a menu but arrow-key/menu semantics are not exposed as one. Identified in the August 2026 accessibility audit; see Known issues.
+
+### Screen reader expectations
+
+- The toggle announces as a button with your label, "menu", and collapsed/expanded state — e.g. "Dropdown Button, menu button, collapsed". *(Verification pending per the policy's AT matrix.)*
+- Items announce as links or buttons with their text, not as menu items.
+
+### Application responsibilities
+
+- Give the toggle a discernible label: visible text, or `iconButtonProps` with a meaningful `alt` when using the icon-button variant.
+- Use `href` items for navigation and plain items for actions, so the announced role matches the behavior.
+- With `autoClose={false}` or `autoClose="inside"`, you alter dismissal behavior — ensure a keyboard user can still predictably close the menu (Escape still closes via `rootClose` unless you've made closing conditional).
+- Dropdown menus are not a substitute for `<select>` in forms — use `Form.Control as="select"` or `Form.Autosuggest` for value selection.
+
+### Known issues
+
+- `aria-haspopup="true"` without `role="menu"` on the popup produces a misleading "menu" announcement (deviation from the APG menu button pattern) — identified in the August 2026 accessibility audit.
+- Unit tests cover open/close behavior only; no automated keyboard or ARIA assertions yet.

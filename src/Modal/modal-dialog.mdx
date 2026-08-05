@@ -180,6 +180,63 @@ label for the dialog element.
 }
 ```
 
+## Accessibility
+
+**Status:** documented from source (Paragon 23.x, August 2026). Assistive technology verification pending — see the [Accessibility policy](/guides/accessibility-policy).
+
+`ModalDialog` implements the [APG dialog (modal) pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/), with one deviation noted below.
+
+### Keyboard support
+
+| Key | Action |
+|---|---|
+| <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through focusable elements inside the dialog. Focus is trapped: it cannot reach the page behind the dialog while it is open. |
+| <kbd>Escape</kbd> | Closes the dialog (calls `onClose`). Disabled when `isBlocking` is set. |
+
+When the dialog opens, focus moves into it automatically. When it closes, focus returns to the
+element that was focused before it opened (typically the triggering button). Clicking or tapping the
+backdrop also closes the dialog unless `isBlocking` is set. Focus management is provided by
+[react-focus-on](https://github.com/theKashey/react-focus-on), which also locks page scroll while
+the dialog is open.
+
+### ARIA roles, states, and properties
+
+| Element | Attribute | Notes |
+|---|---|---|
+| Dialog container (`.pgn__modal`) | `role="dialog"` | |
+| Dialog container | `aria-label` = `title` prop | The `title` prop is **required** and is the dialog's accessible name. |
+| Backdrop | `role="presentation"` | Removed from the accessibility tree. |
+| Close icon button | accessible name = `closeLabel` prop | Defaults to a localized "Close". |
+
+**Deviation from the APG pattern:** the dialog does not currently set `aria-modal="true"`. Focus
+containment is enforced behaviorally by the focus trap, but some screen readers use `aria-modal` to
+scope reading commands to the dialog. Identified in the August 2026 accessibility audit; see Known
+issues.
+
+### Screen reader expectations
+
+- On open, the screen reader announces the dialog's accessible name and role — e.g. with the example
+  above: "My dialog, dialog". *(Verification pending per the policy's AT matrix.)*
+- The close icon button announces as "Close, button" (or your `closeLabel`).
+- Use `ModalDialog.Title` (an `h2` by default) so the dialog's purpose is also reachable as a
+  heading for screen reader users navigating by headings.
+
+### Application responsibilities
+
+- Supply a meaningful, localized `title` — it is the name assistive technology users hear first.
+- Open the dialog from a focusable trigger (normally a `Button`) so focus return lands somewhere
+  sensible.
+- Use `isBlocking` sparingly, and always render an explicit, keyboard-reachable action
+  (e.g. `ModalDialog.CloseButton` or a confirm button) — with `isBlocking`, <kbd>Escape</kbd> and
+  backdrop dismissal are disabled.
+- Keep the heading level of `ModalDialog.Title` (`as` prop) consistent with your page's heading
+  structure.
+
+### Known issues
+
+- `aria-modal="true"` is not set on the dialog element (deviation from the APG modal dialog
+  pattern) — identified in the August 2026 accessibility audit.
+
 ## Overflow visibility handling
 
 The `isOverflowVisible` toggle controls whether content that extends beyond the modal's viewport boundaries is visible.
