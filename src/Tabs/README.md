@@ -289,7 +289,7 @@ Paragon's `Tabs` wraps [React-Bootstrap's Tabs](https://react-bootstrap-v4.netli
 ### Keyboard support
 
 | Key | Action |
-|---|---|
+| --- | --- |
 | <kbd>Tab</kbd> | Moves focus to the next tab. Note: every tab is in the page tab sequence (see deviations). |
 | <kbd>Arrow Left</kbd> / <kbd>Arrow Up</kbd> | Moves focus to the previous tab and selects it (selection follows focus). |
 | <kbd>Arrow Right</kbd> / <kbd>Arrow Down</kbd> | Moves focus to the next tab and selects it. |
@@ -300,7 +300,7 @@ Paragon's `Tabs` wraps [React-Bootstrap's Tabs](https://react-bootstrap-v4.netli
 ### ARIA roles, states, and properties
 
 | Element | Attribute | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Tab list container (`<nav>`) | `role="tablist"` | |
 | Each tab | `<a href="#">` with `role="tab"` | |
 | Each tab | `aria-selected` | `true` on the active tab. |
@@ -327,8 +327,21 @@ Paragon's `Tabs` wraps [React-Bootstrap's Tabs](https://react-bootstrap-v4.netli
 - Don't place additional interactive elements inside tab titles.
 - If tabs drive URL navigation rather than switching in-page panels, use links styled as tabs (`variant="tabs"` navigation) rather than this component, so semantics match behavior.
 
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [ARIA required context role](https://www.w3.org/WAI/standards-guidelines/act/rules/ff89c9/) — `tab` must be owned by a `tablist`
+- [ARIA required owned elements](https://www.w3.org/WAI/standards-guidelines/act/rules/bc4a75/) — `tablist` must own `tab` elements
+- [Element with role attribute has required states and properties](https://www.w3.org/WAI/standards-guidelines/act/rules/4e8ab6/)
+- [Link has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/c487ae/) — tabs render as anchors
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
 ### Known issues
 
-- Missing tab↔panel association (`aria-controls`/`aria-labelledby`) — identified in the August 2026 accessibility audit.
+Tracked together in [#4404](https://github.com/openedx/paragon/issues/4404), identified in the August 2026 accessibility audit:
+
+- Missing tab↔panel association (`aria-controls`/`aria-labelledby`).
 - No roving tabindex: all tabs are tab stops, and <kbd>Space</kbd> does not activate a tab — deviation from the APG tabs pattern.
-- The responsive "More..." overflow control nests a button inside `role="tab"` and exposes hidden tabs as dropdown items — semantics under review in the August 2026 accessibility audit.
+- The responsive "More..." overflow control nests a button inside `role="tab"` and exposes hidden tabs as dropdown items.

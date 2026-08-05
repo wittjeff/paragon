@@ -133,7 +133,7 @@ Paragon's `Dropdown` wraps [React-Bootstrap's Dropdown](https://react-bootstrap-
 Provided by React-Bootstrap / react-overlays:
 
 | Key | Action |
-|---|---|
+| --- | --- |
 | <kbd>Enter</kbd> / <kbd>Space</kbd> | On the toggle: opens or closes the menu (native button activation). |
 | <kbd>Arrow Down</kbd> | On the toggle: opens the menu and moves focus to the first item. In the menu: moves focus to the next item. |
 | <kbd>Arrow Up</kbd> | In the menu: moves focus to the previous item. |
@@ -144,7 +144,7 @@ Provided by React-Bootstrap / react-overlays:
 ### ARIA roles, states, and properties
 
 | Element | Attribute | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Toggle (`Dropdown.Toggle`) | `<button>` | Native button semantics; requires an `id` ("necessary for assistive technologies"). |
 | Toggle | `aria-haspopup="true"` | See deviation note — announces a popup that is not exposed as an ARIA menu. |
 | Toggle | `aria-expanded` | Reflects open/closed state. |
@@ -165,7 +165,18 @@ Provided by React-Bootstrap / react-overlays:
 - With `autoClose={false}` or `autoClose="inside"`, you alter dismissal behavior — ensure a keyboard user can still predictably close the menu (Escape still closes via `rootClose` unless you've made closing conditional).
 - Dropdown menus are not a substitute for `<select>` in forms — use `Form.Control as="select"` or `Form.Autosuggest` for value selection.
 
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the toggle
+- [Link has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/c487ae/) — items rendered with `href`
+- [ARIA state or property is permitted](https://www.w3.org/WAI/standards-guidelines/act/rules/5c01ea/)
+- [ARIA state or property has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/6a7281/) — `aria-expanded`, `aria-haspopup`
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+
 ### Known issues
 
-- `aria-haspopup="true"` without `role="menu"` on the popup produces a misleading "menu" announcement (deviation from the APG menu button pattern) — identified in the August 2026 accessibility audit.
-- Unit tests cover open/close behavior only; no automated keyboard or ARIA assertions yet.
+- `aria-haspopup="true"` without `role="menu"` on the popup produces a misleading "menu" announcement (deviation from the APG menu button pattern) — [#4403](https://github.com/openedx/paragon/issues/4403), identified in the August 2026 accessibility audit.
+- Unit tests cover open/close behavior only; no automated keyboard or ARIA assertions yet ([#4403](https://github.com/openedx/paragon/issues/4403)).

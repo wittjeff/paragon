@@ -189,7 +189,7 @@ label for the dialog element.
 ### Keyboard support
 
 | Key | Action |
-|---|---|
+| --- | --- |
 | <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> | Moves focus through focusable elements inside the dialog. Focus is trapped: it cannot reach the page behind the dialog while it is open. |
 | <kbd>Escape</kbd> | Closes the dialog (calls `onClose`). Disabled when `isBlocking` is set. |
 
@@ -202,7 +202,7 @@ the dialog is open.
 ### ARIA roles, states, and properties
 
 | Element | Attribute | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Dialog container (`.pgn__modal`) | `role="dialog"` | |
 | Dialog container | `aria-label` = `title` prop | The `title` prop is **required** and is the dialog's accessible name. |
 | Backdrop | `role="presentation"` | Removed from the accessibility tree. |
@@ -232,10 +232,23 @@ issues.
 - Keep the heading level of `ModalDialog.Title` (`as` prop) consistent with your page's heading
   structure.
 
+### Relevant ACT rules
+
+[W3C Accessibility Conformance Testing rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+give objective, tool-neutral procedures for testing the claims above:
+
+- [Focusable element has no keyboard trap](https://www.w3.org/WAI/standards-guidelines/act/rules/80af7b/) — the dialog's focus trap must provide a keyboard exit (<kbd>Escape</kbd> / close button)
+- [Button has non-empty accessible name](https://www.w3.org/WAI/standards-guidelines/act/rules/97a4e1/) — the close icon button
+- [Element with role attribute has required states and properties](https://www.w3.org/WAI/standards-guidelines/act/rules/4e8ab6/)
+- [Role attribute has valid value](https://www.w3.org/WAI/standards-guidelines/act/rules/674b10/)
+- [Element in sequential focus order has visible focus](https://www.w3.org/WAI/standards-guidelines/act/rules/oj04fd/)
+- [Element with aria-hidden has no content in sequential focus navigation](https://www.w3.org/WAI/standards-guidelines/act/rules/6cfa84/) — background content while the dialog is open
+
 ### Known issues
 
 - `aria-modal="true"` is not set on the dialog element (deviation from the APG modal dialog
-  pattern) — identified in the August 2026 accessibility audit.
+  pattern) — [#4402](https://github.com/openedx/paragon/issues/4402), identified in the
+  August 2026 accessibility audit.
 
 ## Overflow visibility handling
 
