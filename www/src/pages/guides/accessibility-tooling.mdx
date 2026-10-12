@@ -1,0 +1,241 @@
+---
+title: Accessibility tooling
+---
+
+# Accessibility tooling
+
+The [Accessibility policy](/guides/accessibility-policy) sets WCAG 2.2 Level AA as Paragon's target
+and describes how conformance is verified: linting and automated checks are the floor, manual
+keyboard and assistive technology testing are the bar. This guide covers the tooling in between —
+in particular, **accessibility skills for AI coding agents** — and how to use it in day-to-day
+component development, review, and documentation without letting it stand in for the verification
+the policy requires.
+
+## Tooling layers
+
+| Layer | What it catches | When it runs |
+| --- | --- | --- |
+| Lint ([`eslint-plugin-jsx-a11y`](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y)) | Static JSX patterns: handlers on non-interactive elements, missing `alt`, invalid ARIA attributes | Every change; blocks merge in CI |
+| [axe-core](https://github.com/dequelabs/axe-core) (docs-site development server via `gatsby-plugin-react-axe` when `FEATURE_ENABLE_AXE` is set; browser extension; `jest-axe`) | Rule violations in the rendered DOM: missing names, invalid roles, contrast, structure | Docs-site development only today. Runtime validation in the library ([ADR 0017](https://github.com/openedx/paragon/blob/master/docs/decisions/0017-runtime-a11y-validation.rst)) is accepted but not implemented, and no axe step runs in tests or CI |
+| Agent skills (this guide) | Pattern-level review against WCAG 2.2 and the APG: keyboard contracts, exposed state, focus management, documentation gaps | While writing code, reviewing pull requests, drafting docs |
+| Manual and assistive technology testing | Actual behavior with NVDA, JAWS, VoiceOver, and TalkBack; reflow; forced colors | Before a component's status becomes **Verified** |
+
+Only the last row produces a verification status. Everything above it finds problems faster; none of
+it proves their absence.
+
+## Agent skills
+
+[Agent Skills](https://agentskills.io/specification) is an open format: a directory containing a
+`SKILL.md` with `name` and `description` frontmatter, instructions, and optional reference files and
+scripts. Claude Code, OpenAI Codex, GitHub Copilot, and Gemini CLI all read it. The agent loads a
+skill when a task matches its description, or when you invoke it by name (`/reviewing-a11y` in
+Claude Code, `$reviewing-a11y` in Codex).
+
+Paragon recommends four skill sets. They overlap deliberately: each is strongest at a different
+stage of the work.
+
+| Skill set | Provides | Use it for |
+| --- | --- | --- |
+| [a11y-agent-kit](https://github.com/mfairchild365/a11y-agent-kit) (Michael Fairchild; extracted from Microsoft's a11y-llm-eval) | `building-accessible-ui` skill, which loads automatically for UI work, and a read-only `accessibility-reviewer` agent | Writing or changing component code; reviewing a diff with a severity-ranked report |
+| [a11y-specialist-skills](https://github.com/masuP9/a11y-specialist-skills) (masuP9) | `reviewing-a11y`, `auditing-wcag`, `planning-wcag-audit`, `planning-a11y-improvement`; automated checks published as [`@a11y-skills/audit`](https://github.com/masuP9/a11y-specialist-skills/tree/main/packages/a11y-audit) | Component review against WCAG 2.2 and the APG; formal per-criterion audits with axe-core and Playwright scripts |
+| [accessibility-agents](https://github.com/Community-Access/accessibility-agents) (Community Access) | Six router skills (`accessibility-lead`, `web-accessibility-wizard`, `design-system-auditor`, `ci-accessibility`, `markdown-a11y-assistant`, `document-accessibility-wizard`) dispatching about a hundred specialists; an MCP server with axe-core, Playwright, and document scanners; optional enforcement hooks | Design-token checks, CI setup, docs-site audits, whole-application audits |
+| [claude-wcag-skill](https://github.com/84emllc/claude-wcag-skill) (84EM) | `wcag-2.2-aa`: a four-pass audit method, the 55 Level A/AA criteria as a checklist, and the verbatim WCAG 2.2 text | Quoting normative wording in issues and Accessibility sections; preparing an Accessibility Conformance Report |
+
+### Installing
+
+**Claude Code.** Three of the four publish plugin marketplaces; the fourth is a plain skill
+directory.
+
+```bash
+claude plugin marketplace add mfairchild365/a11y-agent-kit
+claude plugin install a11y-agent-kit@a11y-agent-kit
+
+claude plugin marketplace add masuP9/a11y-specialist-skills
+claude plugin install a11y-specialist-skills@a11y-specialist-skills
+
+claude plugin marketplace add Community-Access/accessibility-agents
+claude plugin install accessibility-agents@community-access
+
+git clone https://github.com/84emllc/claude-wcag-skill ~/.agents/sources/claude-wcag-skill
+ln -s ~/.agents/sources/claude-wcag-skill ~/.claude/skills/wcag-2.2-aa
+```
+
+**Codex.** Codex reads `~/.agents/skills`, the directory shared with Copilot and Gemini CLI, as well
+as `~/.codex/skills`. Clone each repository once and link the skill directories; the same clones can
+serve both tools.
+
+```bash
+cd ~/.agents/sources
+git clone https://github.com/masuP9/a11y-specialist-skills
+git clone https://github.com/mfairchild365/a11y-agent-kit
+git clone https://github.com/Community-Access/accessibility-agents
+
+for s in reviewing-a11y auditing-wcag planning-wcag-audit planning-a11y-improvement; do
+  ln -s ~/.agents/sources/a11y-specialist-skills/skills/$s ~/.agents/skills/$s
+done
+ln -s ~/.agents/sources/a11y-agent-kit/skills/building-accessible-ui ~/.agents/skills/building-accessible-ui
+ln -s ~/.agents/sources/claude-wcag-skill ~/.agents/skills/wcag-2.2-aa
+cp ~/.agents/sources/a11y-agent-kit/codex/agents/accessibility-reviewer.toml ~/.codex/agents/
+
+# accessibility-agents copies its 108 skills and writes ~/.codex/hooks.json
+cd ~/.agents/sources/accessibility-agents && node scripts/install.mjs --clients codex
+```
+
+The a11y-agent-kit and a11y-specialist-skills repositories also publish Codex plugin marketplaces
+(`codex plugin marketplace add <owner>/<repo>`) if you prefer managed installs.
+
+**About the enforcement hooks.** accessibility-agents installs hooks that refuse an edit to a
+user-facing file (`.jsx`, `.tsx`, `.scss`, `.css`, and similar; not Markdown or MDX) until its
+`accessibility-lead` skill has completed a review in the current session, and that refuse to end a
+turn which edited such a file without one. This is a useful gate on a fix branch and an obstacle
+during exploratory work. Disable it with `claude plugin disable accessibility-agents@community-access`
+in Claude Code, or by removing `~/.codex/hooks.json` in Codex; the skills keep working either way.
+
+## Skills in the development workflow
+
+### Before changing a component
+
+`building-accessible-ui` loads itself for any UI task in Claude Code. Its implementation priority
+matches Paragon's: reuse an existing accessible component, then native semantics, then a native
+element with minimal ARIA, and only then a custom widget with the full APG keyboard, focus, and state
+behavior. Before code is written, ask the agent to:
+
+- read the component's existing **Accessibility** section and name the APG pattern it follows;
+- state the keyboard and ARIA contract the change must preserve, including any documented deviations;
+- say which responsibilities stay with the application.
+
+```text
+I am changing src/SelectableBox to expose selection state. Load building-accessible-ui, read the
+Accessibility section in src/SelectableBox/README.md, name the APG pattern, and list the ARIA
+attributes and key handling the change must add or preserve before you touch any code.
+```
+
+A keyboard or ARIA change that is not reflected in the component's Accessibility section is an
+incomplete change; have the agent update the section in the same pull request.
+
+### Before you check in
+
+Run these on every change to a component, whether or not an agent helped write it. None takes more
+than a few minutes, and together they catch most of what review would otherwise send back.
+
+1. **Lint is clean without suppressions.** `npm run lint` passes, and any `eslint-disable` for a
+   `jsx-a11y` rule carries a comment saying why the rule does not apply.
+2. **Tests assert the accessibility contract.** For each interactive element the Accessibility
+   section documents, a test checks its accessible name and the ARIA states it claims
+   (`toHaveAccessibleName`, `toHaveAttribute('aria-expanded', 'true')`, and the keyboard behavior
+   via `userEvent.keyboard`). Where `jest-axe` is available, an axe smoke test on the default
+   render.
+3. **Keyboard pass in the docs site.** Start the site with `FEATURE_ENABLE_AXE=true npm run develop`
+   in `www/`, open the component page, and walk every example with <kbd>Tab</kbd>,
+   <kbd>Shift+Tab</kbd>, arrow keys, <kbd>Enter</kbd>, <kbd>Space</kbd>, and <kbd>Escape</kbd>.
+   Focus is always visible, nothing traps, and the react-axe console output is empty.
+4. **Agent review of the diff**, with every finding checked against source (next section).
+5. **Docs updated.** The component's Accessibility section reflects any keyboard or ARIA change, and
+   new known issues are listed.
+
+### Reviewing a pull request
+
+Run a read-only review: the `accessibility-reviewer` agent, or `/reviewing-a11y`. Give it the diff
+and the component's Accessibility section, and ask for findings ranked by severity with the affected
+users and a proposed fix. Then treat the output as a draft, not a verdict:
+
+1. **Verify every finding against source, and cite the file and line.** Agents misread wrapper
+   libraries; when a component wraps React-Bootstrap or react-overlays, check the pinned version in
+   `package.json`, not the library's current documentation.
+2. **Map each confirmed finding to a WCAG success criterion**, and to an
+   [ACT rule](https://www.w3.org/WAI/standards-guidelines/act/rules/) where one applies. The
+   `wcag-2.2-aa` skill supplies the normative text to quote.
+3. **Separate component defects from application responsibilities.** A missing `aria-label` on an
+   icon-only button is the consumer's job if the prop exists and the docs say so; it is a component
+   defect if there is no way to supply one.
+4. **File confirmed defects as issues** in the house style of
+   [#4402](https://github.com/openedx/paragon/issues/4402),
+   [#4403](https://github.com/openedx/paragon/issues/4403), and
+   [#4404](https://github.com/openedx/paragon/issues/4404): the attribute that is rendered, the
+   attribute expected, the criterion, and the evidence. Add each to the component's **Known issues**
+   until it is fixed.
+
+```text
+Review the diff on this branch for accessibility. Use reviewing-a11y. For each finding give the
+file and line, the WCAG 2.2 criterion, the severity, who it affects, and whether it is a component
+defect or an application responsibility. Do not edit any files.
+```
+
+### Writing a component's Accessibility section
+
+Every component page carries the same five parts: keyboard support, ARIA roles, states, and
+properties, screen reader expectations, application responsibilities, and known issues (see the
+[policy](/guides/accessibility-policy#per-component-accessibility-documentation)). Agents draft these
+well under one grounding rule: **document what the component actually renders**, from source, tests,
+and snapshots, never the APG ideal. Where the two differ, the difference is a documented deviation
+or a known issue. Useful skills here are `aria-specialist` (roles and states for the pattern),
+`wcag-2.2-aa` (criterion wording), and the APG pattern page itself. Set the section's **Status** to
+"documented from source, verification pending" until assistive technology testing has been done.
+
+### Running a formal audit
+
+`auditing-wcag` assigns Pass, Fail, Not Tested, or Not Applicable to every Level A and AA criterion,
+with evidence, and ships Playwright scripts for the checks that are hard to do by hand: focus
+indicator contrast and area (2.4.7, 2.4.11, 2.4.12), 320&nbsp;px reflow (1.4.10), text spacing
+(1.4.12), and target size (2.5.8). `web-accessibility-wizard` runs a comparable phased audit over a
+whole application. Use the results to fill in the per-component verification status, and record the
+skill name and version with the result. Criteria that depend on assistive technology behavior remain
+**Not Tested** until the [testing matrix](/guides/accessibility-policy#verification) has been run.
+
+### Design tokens and theming
+
+When a change touches `tokens/` or `scss/`, run `design-system-auditor` (color, focus ring, spacing,
+and motion tokens) and `contrast-master`. Ask for computed contrast ratios for every text and
+background pair the change introduces, not a visual judgment, and confirm that the
+[`color-yiq`](https://github.com/openedx/paragon/blob/master/styles/scss/core/_variables.scss) threshold
+still produces a passing foreground for every new background.
+
+### Continuous integration
+
+Today Paragon's CI runs type checking, lint (which includes `eslint-plugin-jsx-a11y`), the Jest
+suite, and the builds. There is no axe, pa11y, or Lighthouse step, and `@axe-core/react` from
+ADR 0017 was never added to the library. The automated floor is therefore static JSX linting
+alone.
+
+Two additions would raise it without slowing the pipeline:
+
+- **An axe smoke test per interactive component** with `jest-axe`, run inside the existing Jest
+  step, so that regressions in names, roles, and structure fail the build rather than wait for
+  review. This is what the policy's [contribution criteria](/guides/accessibility-policy#contributions)
+  already expect.
+- **Runtime axe in the docs site build or a Playwright pass over the component pages**, so the
+  rendered examples (the closest thing Paragon has to an integration surface) are scanned on every
+  pull request. `ci-accessibility` helps with the mechanics: baselines so existing issues do not
+  block unrelated changes, SARIF output for GitHub code scanning, and pull-request gating.
+
+### Documentation site
+
+The docs site is subject to the same policy as the library. `markdown-a11y-assistant` audits MDX
+pages for heading order, link text, alternative text, and table structure, and is a quick check
+before opening a docs pull request.
+
+## What agents cannot verify
+
+- **Actual screen reader output.** Expected announcements in a component's Accessibility section are
+  hypotheses until confirmed with the real assistive technology in the matrix. An agent can draft
+  the expectation; only a test run can confirm it.
+- **Visible focus in the shipped theme.** Agents reason about CSS; they do not see the rendered
+  focus ring against every background. Compute the contrast, then look.
+- **Most of WCAG.** Automated rules cover roughly a third of Level AA failures. Skills raise that
+  floor by reasoning about patterns, but they still miss meaning, context, and timing.
+- **Conformance.** No agent report, however clean, sets a component's status to **Verified** or
+  supports a claim of WCAG conformance. The person who runs the tool owns the claim.
+
+## Keeping skills current
+
+Skills change quickly. Update plugins with `claude plugin update`, and `git pull` each clone under
+`~/.agents/sources`. When an audit result or a filed issue was produced with a skill, record the
+skill name and version so a later reader can reproduce it.
+
+## References
+
+- [Paragon Accessibility guide](/guides/accessibility) and [Accessibility policy](/guides/accessibility-policy)
+- [Agent Skills specification](https://agentskills.io/specification)
+- [Claude Code plugins](https://docs.claude.com/en/docs/claude-code/plugins) and [Codex skills](https://learn.chatgpt.com/docs/build-skills)
+- [WCAG 2.2](https://www.w3.org/TR/WCAG22/) · [ARIA Authoring Practices Guide](https://www.w3.org/WAI/ARIA/apg/) · [ACT rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
+- [axe-core](https://github.com/dequelabs/axe-core) · [jest-axe](https://github.com/nickcolley/jest-axe) · [ADR 0017](https://github.com/openedx/paragon/blob/master/docs/decisions/0017-runtime-a11y-validation.rst)
