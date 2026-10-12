@@ -312,7 +312,7 @@ All filters are native form controls: <kbd>Tab</kbd> reaches them, text inputs a
 
 | Element | Attribute | Notes |
 | --- | --- | --- |
-| `TextFilter` input | `<input type="text">` with a visually hidden (`sr-only`) `<label>` "Search {header}" | Label association via `Form.Group` `controlId`; the same text is repeated as `placeholder`. |
+| `TextFilter` input | `<input type="text">` with a visually hidden (`sr-only`) `<label>` "Search \{header\}" | Label association via `Form.Group` `controlId`; the same text is repeated as `placeholder`. |
 | `CheckboxFilter` group | `role="group"` with `aria-labelledby` pointing at a visible label (the column `Header`) | Each checkbox has a visible label (choice name plus count `Badge`) and an `aria-label` of the choice name. |
 | `DropdownFilter` | `<select>` with `aria-labelledby` pointing at an `sr-only` label (the column `Header`) | The first `<option>` repeats the `Header` text and doubles as the "no filter" value. |
 | `MultiSelectDropdownFilter` | `DropdownButton` whose toggle text is the column `Header` | Contains a `Form.CheckboxSet` with `aria-label` = `Header`; checkboxes labeled as in `CheckboxFilter`. |
@@ -325,7 +325,7 @@ All filters are native form controls: <kbd>Tab</kbd> reaches them, text inputs a
 
 ### Application responsibilities
 
-- Use short, localized string `Header` values — they become the filter labels and placeholders ("Search {header}"). If `Header` is an element, `TextFilter` uses it as-is, so make such elements self-describing.
+- Use short, localized string `Header` values — they become the filter labels and placeholders ("Search \{header\}"). If `Header` is an element, `TextFilter` uses it as-is, so make such elements self-describing.
 - Give `filterChoices` human-readable, localized `name`s; the `number` counts are optional but help users predict results.
 - Custom `Filter` components must bring their own label association — follow the patterns above (visible or `sr-only` label tied to the control).
 - Because filter results are not announced, keep the visible "Filtered by" status (`FilterStatus`) rendered near the table rather than hiding it.

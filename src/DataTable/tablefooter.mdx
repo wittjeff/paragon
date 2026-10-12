@@ -165,9 +165,9 @@ The default footer combines a row-count status line and two [Pagination](/compon
 | Element | Attribute | Notes |
 | --- | --- | --- |
 | Row status (`RowStatus`) | plain `<div>` | Localized "Showing 1 - 10 of 20." text; not a live region. |
-| Page picker (`TablePagination`) | `<nav aria-label="table pagination">` | A reduced-variant `Pagination` rendered with its previous/next icons removed, leaving only a dropdown whose toggle text is "{page} of {count}" (e.g. "2 of 5"). Renders only when there are 2+ pages. |
-| Previous/next (`TablePaginationMinimal`) | `<nav aria-label="table pagination">` | A minimal-variant `Pagination`: icon buttons with `aria-label` "Previous, Page {n}" / "Next, Page {n}". |
-| Page-change announcement | `sr-only` `div` with `aria-live="polite"`, `aria-atomic` | Inside each `Pagination`; announces "Page {x}, Current Page, of {y}" when the page changes. |
+| Page picker (`TablePagination`) | `<nav aria-label="table pagination">` | A reduced-variant `Pagination` rendered with its previous/next icons removed, leaving only a dropdown whose toggle text is "\{page\} of \{count\}" (e.g. "2 of 5"). Renders only when there are 2+ pages. |
+| Previous/next (`TablePaginationMinimal`) | `<nav aria-label="table pagination">` | A minimal-variant `Pagination`: icon buttons with `aria-label` "Previous, Page \{n\}" / "Next, Page \{n\}". |
+| Page-change announcement | `sr-only` `div` with `aria-live="polite"`, `aria-atomic` | Inside each `Pagination`; announces "Page \{x\}, Current Page, of \{y\}" when the page changes. |
 
 Both pagination components render simultaneously in the default footer, producing two `<nav>` landmarks with the identical accessible name "table pagination" (and two parallel live regions) — see Known issues.
 

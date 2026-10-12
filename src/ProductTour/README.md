@@ -107,7 +107,7 @@ When a checkpoint opens (and on each advance/back), focus moves automatically to
 | Checkpoint container (`#pgn__checkpoint`) | `role="dialog"` | Non-modal; `aria-modal` is correctly absent. |
 | Checkpoint container | `aria-labelledby="pgn__checkpoint-title"` | The referenced `h2` is rendered **only when the checkpoint has a `title`** — the reference dangles otherwise (see Known issues). |
 | Checkpoint title | `<h2 id="pgn__checkpoint-title">` | Rendered from the `title` prop. |
-| Step position | visible text "{step} of {totalSteps}" | Localized; plus visually hidden "Top of step N" / "Bottom of step N" boundary markers at either end of the dialog. |
+| Step position | visible text "\{step\} of \{totalSteps\}" | Localized; plus visually hidden "Top of step N" / "Bottom of step N" boundary markers at either end of the dialog. |
 | Dismiss icon button | `<button>` with `aria-label` = `dismissAltText` | Defaults to a localized "Close tour"; asserted in `Checkpoint.test.jsx`. |
 | Back / advance / end buttons | `<button>` | Accessible names come entirely from `backButtonText` / `advanceButtonText` / `endButtonText` (see Known issues). |
 
