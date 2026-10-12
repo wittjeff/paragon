@@ -1,0 +1,216 @@
+---
+title: Testing with screen readers
+---
+
+# Testing with screen readers
+
+Every component page carries a **Screen reader expectations** list and a status line that reads
+"documented from source… verification pending". This guide is how that status gets changed. It
+describes the screen readers in the [policy's testing matrix](/guides/accessibility-policy#verification),
+how to set each one up so you can capture what it says, a protocol for walking a component's
+examples, and how to record the result so the next person can reproduce it.
+
+You do not need to be a screen reader user to do this well. You need to be systematic, to compare
+what you hear against what the component page says you should hear, and to write down the
+difference without interpreting it away.
+
+## The matrix
+
+| Screen reader | Browser | Platform | Cost | Notes |
+| --- | --- | --- | --- | --- |
+| [NVDA](https://www.nvaccess.org/download/) | Chrome, Firefox | Windows | Free | The primary pairing for Paragon work. Test both browsers; Firefox and Chrome expose ARIA differently. |
+| [JAWS](https://www.freedomscientific.com/products/software/jaws/) | Chrome | Windows | Licensed; the free download runs for 40 minutes per session | Most used in enterprise and government settings. |
+| VoiceOver | Safari | macOS | Built in | Behaves differently from Windows screen readers in ways that matter for ARIA; do not skip it. |
+| VoiceOver | Safari | iOS | Built in | Touch interaction; the only mobile VoiceOver. |
+| TalkBack | Chrome | Android | Built in | Touch interaction; test on a device, not only an emulator. |
+
+Each combination is one **row** of a component's verification record. A component is **Verified**
+when every row of the matrix has been run against a stated Paragon version; **Partially verified**
+when some rows or variants are outstanding. Pairings outside the matrix (NVDA with Edge, Narrator,
+Orca) are welcome as extra rows but do not substitute for one of these.
+
+Use the real screen reader on a real machine or device. Virtual machines are fine for NVDA and
+JAWS. Browser extensions that imitate a screen reader, and the accessibility tree panel in DevTools,
+are useful for debugging but are not verification.
+
+## Setup
+
+Before testing, turn on each screen reader's **speech capture** so you can copy the announcement
+text instead of transcribing it from memory.
+
+### NVDA (Windows)
+
+- Install NVDA. The NVDA modifier key is <kbd>Insert</kbd> by default; enable <kbd>Caps Lock</kbd>
+  as an alternative in Preferences › Settings › Keyboard if your keyboard has no Insert key.
+- Open NVDA menu (<kbd>NVDA+N</kbd>) › Tools › **Speech Viewer**. Every announcement appears
+  as text; keep the window on a second monitor or behind the browser.
+- Start and stop NVDA with <kbd>Ctrl+Alt+N</kbd>; quit with <kbd>NVDA+Q</kbd>.
+- Default settings are what users have. Do not turn off "Automatic focus mode for focus changes"
+  or change the verbosity level for testing; if you change a setting to investigate something,
+  note it in the record.
+
+### JAWS (Windows)
+
+- Install JAWS. Without a license it runs in 40-minute demo sessions; reboot between sessions.
+  The JAWS modifier is <kbd>Insert</kbd>.
+- Capture speech with **Speech History**: press <kbd>Insert+Space</kbd> then <kbd>H</kbd> to open
+  the last announcements in a window you can copy from.
+- Like NVDA, leave verbosity and automatic forms mode at their defaults.
+
+### VoiceOver (macOS)
+
+- Toggle VoiceOver with <kbd>Cmd+F5</kbd>. The VoiceOver modifier (VO) is
+  <kbd>Control+Option</kbd>, or <kbd>Caps Lock</kbd> if enabled in VoiceOver Utility.
+- In Safari, enable Settings › Advanced › **"Press Tab to highlight each item on a webpage"**.
+  Without it, <kbd>Tab</kbd> skips links and the keyboard results are wrong.
+- Open VoiceOver Utility › Visuals and turn on the **Caption panel** so speech is shown on screen.
+- Enable single-key Quick Nav (VoiceOver Utility › Commanders › Quick Nav) if you want
+  <kbd>H</kbd>/<kbd>B</kbd>/<kbd>T</kbd> navigation; note that it is off for most users by
+  default, so also verify the component without it.
+
+### VoiceOver (iOS) and TalkBack (Android)
+
+- iOS: Settings › Accessibility › VoiceOver, and set the accessibility shortcut so a triple-click
+  of the side button toggles it. Turn on Settings › Accessibility › VoiceOver › **Caption Panel**.
+- Android: Settings › Accessibility › TalkBack. In TalkBack settings › Advanced settings ›
+  Developer settings, turn on **Display speech output**.
+- Connect the device to a desktop for screen recording if you need to share what happened.
+
+## Core commands
+
+The commands you will use on nearly every component. Everything else is in the vendor cheat
+sheets linked under References.
+
+| Task | NVDA | JAWS | VoiceOver (macOS) | VoiceOver (iOS) / TalkBack |
+| --- | --- | --- | --- | --- |
+| Next / previous item in reading order | <kbd>↓</kbd> / <kbd>↑</kbd> | <kbd>↓</kbd> / <kbd>↑</kbd> | <kbd>VO+→</kbd> / <kbd>VO+←</kbd> | Swipe right / left |
+| Move keyboard focus | <kbd>Tab</kbd> / <kbd>Shift+Tab</kbd> | same | same | n/a (focus follows the VoiceOver/TalkBack cursor on activation) |
+| Activate | <kbd>Enter</kbd> or <kbd>Space</kbd> | same | <kbd>VO+Space</kbd> | Double-tap |
+| Next heading / landmark / form field / button / table | <kbd>H</kbd> / <kbd>D</kbd> / <kbd>F</kbd> / <kbd>B</kbd> / <kbd>T</kbd> | <kbd>H</kbd> / <kbd>R</kbd> / <kbd>F</kbd> / <kbd>B</kbd> / <kbd>T</kbd> | <kbd>VO+Cmd+H</kbd> / rotor / <kbd>VO+Cmd+J</kbd> / rotor / <kbd>VO+Cmd+T</kbd> | Rotor (two-finger twist on iOS; swipe up/down to choose a granularity on TalkBack), then swipe |
+| List of elements on the page | <kbd>NVDA+F7</kbd> | <kbd>Insert+F3</kbd> | Rotor <kbd>VO+U</kbd> | Rotor |
+| Switch between reading mode and interacting with a widget | <kbd>NVDA+Space</kbd> (browse ↔ focus mode; usually automatic) | <kbd>Insert+Z</kbd> (virtual cursor on/off; forms mode is automatic) | <kbd>VO+Shift+↓</kbd> to interact with a group, <kbd>VO+Shift+↑</kbd> to stop | Not applicable |
+| Table cells | <kbd>Ctrl+Alt+arrows</kbd> | <kbd>Ctrl+Alt+arrows</kbd> | Interact with the table, then <kbd>VO+arrows</kbd>; <kbd>VO+C</kbd> reads the column header | Swipe within the table |
+| Repeat what has focus | <kbd>NVDA+Tab</kbd> | <kbd>Insert+Tab</kbd> | <kbd>VO+F3</kbd> | Touch the element |
+
+Two mode concepts cause most confusion for new testers:
+
+- **Browse (virtual) mode vs. focus (forms) mode.** NVDA and JAWS read the page from a virtual
+  copy; arrow keys move through content, and single letters jump by element type. When you land on
+  a text field or a composite widget, the screen reader switches to focus mode and passes keys to
+  the page. A component that needs arrow keys (tabs, listbox, menu, slider, grid) must trigger that
+  switch, which depends on its ARIA roles. If arrow keys read the page instead of operating the
+  widget, that is a finding.
+- **VoiceOver's cursor is not keyboard focus.** The VO cursor moves independently; keyboard focus
+  follows only when you interact. Test both: what the VO cursor reads when moved onto the element,
+  and what happens when you <kbd>Tab</kbd> to it.
+
+## Protocol for one component
+
+Open the component's docs page in the paired browser, with the screen reader running and speech
+capture visible. Work through the **first example** fully; then repeat the steps that are affected
+for each variant the component page's Accessibility section calls out (sizes and colors do not
+need separate runs; different roles, states, or sub-components do).
+
+1. **Reach it by keyboard.** <kbd>Tab</kbd> from the example's preceding content. Every control the
+   Keyboard support table lists as focusable is reached, in visual order, and nothing else is.
+   Note what is announced on arrival: it should contain the accessible name, the role, and the
+   current state, in whatever order that screen reader uses.
+2. **Reach it by reading.** Arrow down through the example from the top. Static text, labels, and
+   descriptions are read once, in a sensible order; decorative icons are silent; visually hidden
+   text (`sr-only`) is read where the page says it is.
+3. **Operate it with the documented keys.** Use every key in the Keyboard support table. For each,
+   record what changes visually and what is announced. Arrow-key widgets must enter focus mode on
+   their own.
+4. **Check state changes are announced.** Toggle, expand, select, check, sort, page. The new state
+   (expanded, selected, checked, pressed, current, invalid) is announced without re-reading the
+   whole control, and without silence.
+5. **Check live content.** Where the page says something announces "politely" (counts, status,
+   errors, loading), trigger it and confirm the announcement arrives without moving focus. Note the
+   delay if it is more than about a second.
+6. **Check overlays.** For dialogs, popovers, sheets, menus, tours: on open, the name and role are
+   announced and focus moves inside; <kbd>Tab</kbd> cycles within the overlay; <kbd>Escape</kbd>
+   closes it; focus returns to the element that opened it; content behind a modal is not reachable
+   with the reading commands.
+7. **Check tables and grids.** Column and row headers are announced when you move between cells;
+   sort state is announced on sortable headers; selection controls have distinct names per row.
+8. **Check the error path.** If the component has an invalid state, trigger it. The field announces
+   as invalid, and the error text is reachable and associated with the field.
+9. **Reload and repeat step 1** once with the screen reader started after the page loaded. Some
+   defects only appear when the accessibility tree is built late.
+
+Compare each announcement against the component page's **Screen reader expectations**. There are
+three outcomes per expectation:
+
+- **Matches.** The wording may differ by screen reader; the content (name, role, state, position)
+  is what the page says.
+- **Deviates.** Something is missing, wrong, duplicated, or silent. Record the exact announcement
+  text from the speech capture, the screen reader and browser, and the step. Do not fix the
+  wording in your head.
+- **Expectation is wrong.** The page claims something the component does not do, or vice versa.
+  That is a documentation defect; record it the same way.
+
+## Recording the result
+
+Each component gets one verification record per Paragon version, kept with the audit materials
+and summarized on the component page. Use this shape:
+
+```markdown
+## ModalDialog — verification record
+
+Paragon 23.23.0 · docs page /components/modaldialog · 2026-10-12 · tester: J. Witt
+
+| Screen reader | Browser | Versions | Result |
+| --- | --- | --- | --- |
+| NVDA | Chrome | NVDA 2026.1, Chrome 141, Windows 11 | Matches |
+| NVDA | Firefox | NVDA 2026.1, Firefox 134, Windows 11 | Deviates: D1 |
+| JAWS | Chrome | JAWS 2026, Chrome 141, Windows 11 | Not run |
+| VoiceOver | Safari | macOS 15.3, Safari 18.3 | Matches |
+| VoiceOver | Safari | iOS 18.3 | Matches |
+| TalkBack | Chrome | TalkBack 15.1, Chrome 141, Android 15 | Not run |
+
+### Deviations
+
+**D1.** Step 6, on open: announced "The title, heading level 2" only; the dialog name and role
+("My dialog, dialog") were not announced. Reproduced 3/3. Expected per page: "My dialog, dialog".
+```
+
+Then:
+
+- Update the component page's status line. A component with every row run becomes
+  "**Verified** against the AT matrix (Paragon 23.23.0, October 2026)"; with rows outstanding,
+  "**Partially verified**", naming what is outstanding. Keep "verification pending" if nothing has
+  been run.
+- File each deviation that is a component defect as a GitHub issue in the house style
+  ([#4402](https://github.com/openedx/paragon/issues/4402) is the template): the attribute or
+  behavior rendered, the attribute or behavior expected, the WCAG criterion, and the screen reader,
+  browser, and versions. Add it to the page's **Known issues**.
+- Correct the page's expectation text where the expectation was wrong, in the same pull request.
+
+Evidenced deviations, with versions and reproduction counts, are what the policy prioritizes over
+theoretical ones. A record that says "seems fine" is not a verification.
+
+## Pitfalls
+
+- **Testing with the mouse.** If you click, you are not testing the keyboard path. Unplug it or
+  move it out of reach.
+- **Trusting one pairing.** Chrome and Firefox differ in how they compute accessible names and
+  expose live regions; VoiceOver differs from both. A component is not verified because NVDA and
+  Chrome were happy.
+- **Tuning the screen reader.** Verbosity, punctuation level, and automatic mode switching all
+  change what you hear. Test at defaults.
+- **Confusing silence with success.** A control that announces nothing on state change has a
+  defect; so does one that re-reads everything. Both are deviations.
+- **Reading the accessibility tree instead.** The DevTools accessibility panel shows what the
+  browser exposes, not what the screen reader says. Use it to diagnose a deviation, not to decide
+  there isn't one.
+- **Mistaking docs-site chrome for the component.** The sidebar, header, and live code editor
+  have their own issues; keep them out of the component's record.
+
+## References
+
+- [Accessibility policy](/guides/accessibility-policy) — the matrix and the verification statuses
+- [Accessibility guide](/guides/accessibility) and [Accessibility tooling](/guides/accessibility-tooling)
+- Command references: [NVDA](https://dequeuniversity.com/screenreaders/nvda-keyboard-shortcuts) · [JAWS](https://dequeuniversity.com/screenreaders/jaws-keyboard-shortcuts) · [VoiceOver macOS](https://dequeuniversity.com/screenreaders/voiceover-keyboard-shortcuts) · [VoiceOver iOS](https://dequeuniversity.com/screenreaders/voiceover-ios-shortcuts) · [TalkBack](https://dequeuniversity.com/screenreaders/talkback-shortcuts)
+- WebAIM introductions: [Using NVDA](https://webaim.org/articles/nvda/) · [Using JAWS](https://webaim.org/articles/jaws/) · [Using VoiceOver](https://webaim.org/articles/voiceover/)
+- [ARIA Authoring Practices Guide: Read Me First](https://www.w3.org/WAI/ARIA/apg/practices/read-me-first/) — why patterns must be verified with assistive technology
+- [WebAIM Screen Reader User Survey](https://webaim.org/projects/screenreadersurvey10/) — which pairings people actually use
