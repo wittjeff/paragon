@@ -203,16 +203,26 @@ Two additions would raise it without slowing the pipeline:
   step, so that regressions in names, roles, and structure fail the build rather than wait for
   review. This is what the policy's [contribution criteria](/guides/accessibility-policy#contributions)
   already expect.
-- **Runtime axe in the docs site build or a Playwright pass over the component pages**, so the
-  rendered examples (the closest thing Paragon has to an integration surface) are scanned on every
-  pull request. `ci-accessibility` helps with the mechanics: baselines so existing issues do not
-  block unrelated changes, SARIF output for GitHub code scanning, and pull-request gating.
+- **An axe pass over the built docs site**, since CI already builds it. Serve `www/public`, visit
+  each component page with Playwright and `@axe-core/playwright`, and scope the scan to the
+  rendered examples (`.pgn-doc__code-block-preview`) so that the site's own header, sidebar, and
+  code editor do not drown out component results. Fail on critical and serious impact against a
+  committed baseline so existing issues do not block unrelated changes. Build the themes
+  (`npm run build-themes`) before scanning: without them the site renders unstyled and size and
+  contrast results are meaningless. `ci-accessibility` helps with the mechanics: baselines, SARIF
+  output for GitHub code scanning, and pull-request gating.
+
+Of the two, the Jest test is the one to land first. In a prototype run it reproduced a third of the
+open P1 findings with no tuning, and it costs nothing in infrastructure.
 
 ### Documentation site
 
 The docs site is subject to the same policy as the library. `markdown-a11y-assistant` audits MDX
 pages for heading order, link text, alternative text, and table structure, and is a quick check
-before opening a docs pull request.
+before opening a docs pull request. Also build the site locally (`make build-docs`) before
+opening one: MDX evaluates `{...}` in prose as a JavaScript expression, so a placeholder like
+"\{step\} of \{total\}" must be escaped with backslashes or wrapped in backticks, and only the
+build catches it.
 
 ## What agents cannot verify
 
